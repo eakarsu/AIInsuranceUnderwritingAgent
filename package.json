@@ -1,0 +1,12 @@
+{
+  "name": "ai-insurance-underwriting-agent",
+  "version": "1.0.0",
+  "description": "AI-Powered Insurance Underwriting Agent Platform",
+  "scripts": {
+    "start": "bash start.sh",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "seed": "cd backend && node seed.js",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  }
+}
