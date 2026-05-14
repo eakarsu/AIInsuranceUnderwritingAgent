@@ -3,11 +3,17 @@ const router = express.Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
 const { callOpenRouter } = require('../services/openrouter');
+const { aiRateLimiter } = require('../middleware/rateLimiter');
 
 router.get('/', auth, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM claims ORDER BY created_at DESC');
-    res.json(result.rows);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+    const countRes = await pool.query('SELECT COUNT(*) FROM claims');
+    const total = parseInt(countRes.rows[0].count);
+    const result = await pool.query('SELECT * FROM claims ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]);
+    res.json({ data: result.rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -51,7 +57,7 @@ router.delete('/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/:id/ai-evaluate', auth, async (req, res) => {
+router.post('/:id/ai-evaluate', auth, aiRateLimiter, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM claims WHERE id = $1', [req.params.id]);
     if (!result.rows[0]) return res.status(404).json({ error: 'Not found' });

@@ -18,11 +18,19 @@ const features = [
   { slug: 'audit-log', title: 'Audit Trail', desc: 'Complete audit log of all system activities and changes', icon: '📝', color: '#4a5568', badge: 'analytics', api: '/audit-log' },
   { slug: 'reports', title: 'Reports & Analytics', desc: 'Comprehensive reporting and business intelligence dashboards', icon: '📈', color: '#38a169', badge: 'analytics', api: '/reports' },
   { slug: 'renewals', title: 'Policy Renewals', desc: 'AI-recommended renewal terms and retention optimization', icon: '🔄', color: '#805ad5', badge: 'ai', api: '/renewals' },
+  { slug: '__policy-recommendation', title: 'Policy Recommendation', desc: 'AI-powered customer-level policy recommendations with coverage and premium ranges', icon: '✨', color: '#6b46c1', badge: 'ai', route: '/policy-recommendation' },
+  { slug: '__ai-center', title: 'AI Center', desc: 'Composed AI: risk trajectory, renewals optimization, rule-engine optimization, premium dynamism', icon: '🧠', color: '#553c9a', badge: 'ai', route: '/ai-center' },
 ]
+
+const healthColors = { good: { bg: '#c6f6d5', color: '#276749' }, fair: { bg: '#fefcbf', color: '#744210' }, poor: { bg: '#fed7d7', color: '#9b2c2c' } }
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const [stats, setStats] = useState({ policies: 0, customers: 0, claims: 0, premium: 0 })
+  const [portfolio, setPortfolio] = useState(null)
+  const [portfolioLoading, setPortfolioLoading] = useState(false)
+  const [portfolioError, setPortfolioError] = useState('')
+  const [showRecs, setShowRecs] = useState(false)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   useEffect(() => {
@@ -33,25 +41,47 @@ export default function Dashboard() {
           apiGet('/customers'),
           apiGet('/claims'),
         ])
-        if (policies && customers && claims) {
-          const totalPremium = (policies || []).reduce((s, p) => s + parseFloat(p.premium || 0), 0)
-          setStats({
-            policies: (policies || []).length,
-            customers: (customers || []).length,
-            claims: (claims || []).length,
-            premium: totalPremium,
-          })
-        }
+        const extract = (d) => Array.isArray(d) ? d : (d?.data || [])
+        const pols = extract(policies)
+        const custs = extract(customers)
+        const clms = extract(claims)
+        const totalPremium = pols.reduce((s, p) => s + parseFloat(p.premium || 0), 0)
+        setStats({
+          policies: pols.length,
+          customers: custs.length,
+          claims: clms.length,
+          premium: totalPremium,
+        })
       } catch (e) { /* ignore */ }
     }
     loadStats()
   }, [])
+
+  async function loadPortfolioAnalytics() {
+    setPortfolioLoading(true)
+    setPortfolioError('')
+    try {
+      const data = await apiGet('/analytics/portfolio')
+      if (data?.error) {
+        setPortfolioError(data.error)
+      } else {
+        setPortfolio(data)
+      }
+    } catch (e) {
+      setPortfolioError('Failed to load portfolio analytics')
+    }
+    setPortfolioLoading(false)
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     navigate('/login')
   }
+
+  const ai = portfolio?.ai_analysis
+  const structured = ai?.structured
+  const portfolioStats = portfolio?.stats
 
   return (
     <div>
@@ -91,9 +121,106 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Portfolio Analytics Section */}
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24, marginBottom: 28 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Portfolio Analytics</h2>
+            <button className="btn btn-ai btn-sm" onClick={loadPortfolioAnalytics} disabled={portfolioLoading}>
+              {portfolioLoading ? 'Analyzing...' : 'Run AI Portfolio Analysis'}
+            </button>
+          </div>
+
+          {portfolioError && (
+            <div style={{ padding: '10px 14px', background: '#fff5f5', border: '1px solid #feb2b2', borderRadius: 8, color: '#c53030', fontSize: 13, marginBottom: 12 }}>
+              {portfolioError}
+            </div>
+          )}
+
+          {portfolioLoading && (
+            <div style={{ textAlign: 'center', padding: 20, color: '#718096' }}>Analyzing portfolio with AI...</div>
+          )}
+
+          {portfolio && !portfolioLoading && (
+            <div>
+              {/* Computed stats */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
+                {[
+                  { label: 'Total Policies', value: portfolioStats?.total_policies },
+                  { label: 'Total Premium', value: portfolioStats?.total_premium ? `$${Number(portfolioStats.total_premium).toLocaleString()}` : '—' },
+                  { label: 'Active Claims', value: portfolioStats?.active_claims },
+                  { label: 'Loss Ratio', value: portfolioStats?.loss_ratio !== undefined ? `${portfolioStats.loss_ratio}%` : '—' },
+                  { label: 'Avg Risk Score', value: portfolioStats?.avg_risk_score },
+                ].map(s => (
+                  <div key={s.label} style={{ background: '#f7fafc', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#2d3748' }}>{s.value ?? '—'}</div>
+                    <div style={{ fontSize: 12, color: '#718096', marginTop: 2 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* AI analysis */}
+              {structured && (
+                <div>
+                  {structured.portfolio_health && (
+                    <div style={{ marginBottom: 12 }}>
+                      <span style={{ fontWeight: 600 }}>Portfolio Health: </span>
+                      <span style={{
+                        padding: '3px 12px', borderRadius: 12, fontWeight: 700, fontSize: 13,
+                        background: healthColors[structured.portfolio_health]?.bg || '#e2e8f0',
+                        color: healthColors[structured.portfolio_health]?.color || '#4a5568',
+                      }}>
+                        {structured.portfolio_health?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  {structured.top_risks && structured.top_risks.length > 0 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontWeight: 600, marginBottom: 6 }}>Top Risks:</div>
+                      <ul style={{ margin: 0, paddingLeft: 20 }}>
+                        {structured.top_risks.map((r, i) => <li key={i} style={{ fontSize: 13, color: '#744210' }}>{r}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {structured.recommendations && structured.recommendations.length > 0 && (
+                    <div>
+                      <button
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, color: '#3182ce', padding: 0, fontSize: 14 }}
+                        onClick={() => setShowRecs(v => !v)}
+                      >
+                        {showRecs ? 'Hide' : 'Show'} Recommendations ({structured.recommendations.length})
+                      </button>
+                      {showRecs && (
+                        <div style={{ marginTop: 8, padding: '12px 16px', background: '#ebf8ff', borderRadius: 8 }}>
+                          <ul style={{ margin: 0, paddingLeft: 20 }}>
+                            {structured.recommendations.map((r, i) => <li key={i} style={{ fontSize: 13, marginBottom: 4 }}>{r}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {structured.loss_ratio_assessment && (
+                    <div style={{ marginTop: 10, fontSize: 13, color: '#4a5568' }}>
+                      <strong>Loss Ratio Assessment:</strong> {structured.loss_ratio_assessment}
+                    </div>
+                  )}
+                </div>
+              )}
+              {!structured && ai?.result && (
+                <p style={{ fontSize: 13, color: '#4a5568', marginTop: 8 }}>{ai.result}</p>
+              )}
+            </div>
+          )}
+
+          {!portfolio && !portfolioLoading && (
+            <div style={{ textAlign: 'center', color: '#a0aec0', fontSize: 14, padding: 16 }}>
+              Click "Run AI Portfolio Analysis" to get an AI-powered assessment of your full portfolio.
+            </div>
+          )}
+        </div>
+
         <div className="cards-grid">
           {features.map((f) => (
-            <div key={f.slug} className="feature-card" onClick={() => navigate(`/feature/${f.slug}`)}>
+            <div key={f.slug} className="feature-card" onClick={() => navigate(f.route || `/feature/${f.slug}`)}>
               <div className="card-icon" style={{ background: `${f.color}15`, color: f.color }}>
                 {f.icon}
               </div>

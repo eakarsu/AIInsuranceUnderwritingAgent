@@ -344,21 +344,29 @@ export default function FeaturePage() {
   const [formData, setFormData] = useState({})
   const [aiResult, setAiResult] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
+  const [aiRateLimited, setAiRateLimited] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 })
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   useEffect(() => {
-    loadItems()
+    loadItems(1)
     setSelected(null)
     setAiResult(null)
     setShowForm(false)
+    setAiRateLimited(false)
   }, [slug])
 
-  async function loadItems() {
+  async function loadItems(page = 1) {
     setLoading(true)
     try {
-      const data = await apiGet(config.api)
-      setItems(Array.isArray(data) ? data : [])
+      const data = await apiGet(`${config.api}?page=${page}&limit=20`)
+      if (data && data.data && data.pagination) {
+        setItems(data.data)
+        setPagination(data.pagination)
+      } else {
+        setItems(Array.isArray(data) ? data : [])
+      }
     } catch (e) { setItems([]) }
     setLoading(false)
   }
@@ -413,8 +421,19 @@ export default function FeaturePage() {
     if (!config.aiAction || !selected) return
     setAiLoading(true)
     setAiResult(null)
+    setAiRateLimited(false)
     try {
-      const data = await apiPost(`${config.api}/${selected.id}${config.aiAction.endpoint}`, {})
+      const res = await fetch(`/api${config.api}/${selected.id}${config.aiAction.endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({}),
+      })
+      if (res.status === 429) {
+        setAiRateLimited(true)
+        setAiLoading(false)
+        return
+      }
+      const data = await res.json()
       setAiResult(data[config.aiAction.resultKey])
     } catch (e) {
       setAiResult({ success: false, result: 'Failed to get AI analysis' })
@@ -449,7 +468,7 @@ export default function FeaturePage() {
             <button className="btn-back" onClick={() => navigate('/')}>&#8592;</button>
             <div>
               <h1>{config.icon} {config.title}</h1>
-              <span className="item-count">{items.length} items</span>
+              <span className="item-count">{pagination.total || items.length} items</span>
             </div>
           </div>
           <button className="btn btn-primary" onClick={handleNew}>+ New Item</button>
@@ -461,32 +480,41 @@ export default function FeaturePage() {
           ) : items.length === 0 ? (
             <div style={{ padding: 40, textAlign: 'center', color: '#718096' }}>No items yet. Click "New Item" to add one.</div>
           ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  {config.columns.map(col => (
-                    <th key={col}>{config.columnLabels[col] || col}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {items.map(item => (
-                  <tr key={item.id} onClick={() => handleRowClick(item)}>
+            <>
+              <table className="data-table">
+                <thead>
+                  <tr>
                     {config.columns.map(col => (
-                      <td key={col}>
-                        {['status', 'severity', 'risk_level', 'compliance_status', 'trend'].includes(col) ? (
-                          <span className={`status-badge status-${(item[col] || '').toLowerCase().replace(' ', '_')}`}>
-                            {item[col]}
-                          </span>
-                        ) : (
-                          config.formatValue ? config.formatValue(col, item[col]) : item[col]
-                        )}
-                      </td>
+                      <th key={col}>{config.columnLabels[col] || col}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {items.map(item => (
+                    <tr key={item.id} onClick={() => handleRowClick(item)}>
+                      {config.columns.map(col => (
+                        <td key={col}>
+                          {['status', 'severity', 'risk_level', 'compliance_status', 'trend'].includes(col) ? (
+                            <span className={`status-badge status-${(item[col] || '').toLowerCase().replace(' ', '_')}`}>
+                              {item[col]}
+                            </span>
+                          ) : (
+                            config.formatValue ? config.formatValue(col, item[col]) : item[col]
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {pagination.totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, padding: '16px 0' }}>
+                  <button className="btn btn-secondary btn-sm" disabled={pagination.page <= 1} onClick={() => loadItems(pagination.page - 1)}>Prev</button>
+                  <span style={{ fontSize: 13, color: '#718096' }}>Page {pagination.page} of {pagination.totalPages}</span>
+                  <button className="btn btn-secondary btn-sm" disabled={pagination.page >= pagination.totalPages} onClick={() => loadItems(pagination.page + 1)}>Next</button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -522,6 +550,12 @@ export default function FeaturePage() {
                 </div>
               )}
 
+              {aiRateLimited && (
+                <div style={{ marginTop: 16, padding: '12px 16px', background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 8, color: '#856404', fontSize: 14 }}>
+                  AI rate limit exceeded (20 requests/hour). Please wait before making another AI request.
+                </div>
+              )}
+
               {aiResult && (
                 <div className="ai-result-container">
                   <div className="ai-result-header">
@@ -531,7 +565,85 @@ export default function FeaturePage() {
                   </div>
                   <div className="ai-result-body">
                     {aiResult.success ? (
-                      <ReactMarkdown>{aiResult.result}</ReactMarkdown>
+                      <>
+                        {/* Structured display if JSON available */}
+                        {aiResult.structured && (() => {
+                          const s = aiResult.structured
+                          const featureSlug = slug
+                          if (featureSlug === 'risk-assessment' && (s.risk_level || s.risk_factors || s.premium_impact !== undefined)) {
+                            return (
+                              <div>
+                                {s.risk_level && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <span style={{ fontWeight: 700 }}>Risk Level: </span>
+                                    <span style={{ padding: '2px 10px', borderRadius: 12, fontWeight: 700,
+                                      background: { low: '#c6f6d5', medium: '#fefcbf', high: '#fed7d7', critical: '#feb2b2' }[s.risk_level] || '#e2e8f0',
+                                      color: { low: '#276749', medium: '#744210', high: '#9b2c2c', critical: '#742a2a' }[s.risk_level] || '#4a5568' }}>
+                                      {s.risk_level?.toUpperCase()}
+                                    </span>
+                                  </div>
+                                )}
+                                {s.risk_factors && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Risk Factors:</div>
+                                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                                      {(Array.isArray(s.risk_factors) ? s.risk_factors : []).map((f, i) => (
+                                        <li key={i} style={{ fontSize: 13, color: '#9b2c2c' }}>{typeof f === 'object' ? `${f.factor}: ${f.impact}` : f}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {s.premium_impact !== undefined && (
+                                  <div style={{ fontWeight: 600 }}>Premium Impact: <span style={{ color: '#3182ce' }}>${Number(s.premium_impact).toLocaleString()}</span></div>
+                                )}
+                                <hr style={{ margin: '12px 0' }} />
+                                <ReactMarkdown>{aiResult.result}</ReactMarkdown>
+                              </div>
+                            )
+                          }
+                          if (featureSlug === 'fraud-detection' && (s.fraud_probability !== undefined || s.red_flags)) {
+                            return (
+                              <div>
+                                {s.fraud_probability !== undefined && (
+                                  <div style={{ marginBottom: 12 }}>
+                                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Fraud Probability: {s.fraud_probability}%</div>
+                                    <div style={{ background: '#e2e8f0', borderRadius: 4, height: 12, overflow: 'hidden' }}>
+                                      <div style={{ width: `${s.fraud_probability}%`, background: s.fraud_probability >= 70 ? '#e53e3e' : s.fraud_probability >= 40 ? '#d69e2e' : '#38a169', height: '100%', transition: 'width 0.3s' }} />
+                                    </div>
+                                  </div>
+                                )}
+                                {s.red_flags && s.red_flags.length > 0 && (
+                                  <div style={{ marginBottom: 10, padding: '10px 12px', background: '#fff5f5', border: '1px solid #feb2b2', borderRadius: 6 }}>
+                                    <div style={{ fontWeight: 600, marginBottom: 4, color: '#c53030' }}>Red Flags:</div>
+                                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                                      {s.red_flags.map((f, i) => <li key={i} style={{ fontSize: 13, color: '#c53030' }}>{f}</li>)}
+                                    </ul>
+                                  </div>
+                                )}
+                                {s.investigation_steps && s.investigation_steps.length > 0 && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Investigation Steps:</div>
+                                    <ol style={{ margin: 0, paddingLeft: 18 }}>
+                                      {s.investigation_steps.map((step, i) => (
+                                        <li key={i} style={{ fontSize: 13 }}>
+                                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 6, cursor: 'pointer' }}>
+                                            <input type="checkbox" style={{ marginTop: 2 }} />
+                                            {step}
+                                          </label>
+                                        </li>
+                                      ))}
+                                    </ol>
+                                  </div>
+                                )}
+                                <hr style={{ margin: '12px 0' }} />
+                                <ReactMarkdown>{aiResult.result}</ReactMarkdown>
+                              </div>
+                            )
+                          }
+                          return <ReactMarkdown>{aiResult.result}</ReactMarkdown>
+                        })()}
+                        {!aiResult.structured && <ReactMarkdown>{aiResult.result}</ReactMarkdown>}
+                      </>
                     ) : (
                       <p style={{ color: '#e53e3e' }}>{aiResult.result || 'Analysis failed'}</p>
                     )}

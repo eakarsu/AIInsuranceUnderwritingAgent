@@ -3,11 +3,17 @@ const router = express.Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
 const { callOpenRouter } = require('../services/openrouter');
+const { aiRateLimiter } = require('../middleware/rateLimiter');
 
 router.get('/', auth, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM risk_assessments ORDER BY created_at DESC');
-    res.json(result.rows);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+    const countRes = await pool.query('SELECT COUNT(*) FROM risk_assessments');
+    const total = parseInt(countRes.rows[0].count);
+    const result = await pool.query('SELECT * FROM risk_assessments ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]);
+    res.json({ data: result.rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -51,15 +57,32 @@ router.delete('/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/:id/ai-analyze', auth, async (req, res) => {
+router.post('/:id/ai-analyze', auth, aiRateLimiter, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM risk_assessments WHERE id = $1', [req.params.id]);
     if (!result.rows[0]) return res.status(404).json({ error: 'Not found' });
     const assessment = result.rows[0];
 
+    // Fetch related customer + policy via JOIN for richer context
+    let customerContext = '';
+    try {
+      const relatedResult = await pool.query(
+        `SELECT c.name AS customer_name, c.email, c.risk_score AS customer_risk_score, c.customer_type,
+                p.policy_number, p.policy_type, p.coverage_amount, p.premium, p.status AS policy_status
+         FROM customers c
+         LEFT JOIN policies p ON p.customer_name = c.name
+         WHERE c.name = $1
+         LIMIT 3`,
+        [assessment.entity_name]
+      );
+      if (relatedResult.rows.length > 0) {
+        customerContext = `\nRelated Customer/Policy Records:\n${JSON.stringify(relatedResult.rows, null, 2)}`;
+      }
+    } catch (e) { /* continue without extra context */ }
+
     const aiResult = await callOpenRouter(
-      'You are an expert insurance risk analyst AI. Analyze the risk profile and provide: 1) Overall risk rating with justification 2) Key risk factors identified 3) Mitigation recommendations 4) Premium impact assessment 5) Comparable industry benchmarks. Use clear sections with headers and bullet points.',
-      `Analyze this risk profile:\n- Entity: ${assessment.entity_name}\n- Type: ${assessment.entity_type}\n- Category: ${assessment.risk_category}\n- Current Score: ${assessment.risk_score}/100\n- Level: ${assessment.risk_level}\n- Location: ${assessment.location}\n- Industry: ${assessment.industry}\n- Annual Revenue: $${assessment.annual_revenue}\n- Employees: ${assessment.employee_count}\n- Factors: ${assessment.factors || 'None specified'}`
+      'You are an expert insurance risk analyst AI. Analyze the risk profile and return JSON with: { risk_level: "low|medium|high|critical", risk_score_adjustment: number, risk_factors: [{ factor: string, impact: string, severity: string }], premium_impact: number, mitigation_recommendations: [string], detailed_analysis: string, comparable_benchmarks: string }',
+      `Analyze this risk profile:\n- Entity: ${assessment.entity_name}\n- Type: ${assessment.entity_type}\n- Category: ${assessment.risk_category}\n- Current Score: ${assessment.risk_score}/100\n- Level: ${assessment.risk_level}\n- Location: ${assessment.location}\n- Industry: ${assessment.industry}\n- Annual Revenue: $${assessment.annual_revenue}\n- Employees: ${assessment.employee_count}\n- Factors: ${assessment.factors || 'None specified'}${customerContext}`
     );
 
     res.json({ assessment, ai_analysis: aiResult });
