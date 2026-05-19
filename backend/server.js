@@ -88,6 +88,12 @@ app.use('/api/gap-no-webhook-surface-for-application-event', route_gap_no_webhoo
 app.use('/api/gap-no-file-upload-for-supporting-documents', route_gap_no_file_upload_for_supporting_documents);
 app.use('/api/gap-no-e-signature-for-binderspolicies', route_gap_no_e_signature_for_binderspolicies);
 
+// Custom Views (mount BEFORE any 404)
+app.use('/api/custom-views', require('./routes/customViews'));
+
+// 404 fallback for unknown /api routes
+app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+
 app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
 });

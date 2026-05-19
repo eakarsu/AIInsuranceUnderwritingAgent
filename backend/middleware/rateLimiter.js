@@ -1,12 +1,11 @@
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 
 const aiRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 20,
-  keyGenerator: (req) => {
+  keyGenerator: (req, res) => {
     if (req.user?.id) return String(req.user.id);
-    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
-    return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+    return ipKeyGenerator(req, res);
   },
   validate: { xForwardedForHeader: false },
   handler: (req, res) => {

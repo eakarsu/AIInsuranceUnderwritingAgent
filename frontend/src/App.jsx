@@ -5,6 +5,7 @@ import FeaturePage from './pages/FeaturePage'
 import PolicyRecommendation from './pages/PolicyRecommendation'
 import AICenter from './pages/AICenter'
 import Pass5Tools from './pages/Pass5Tools'
+import CustomViewsPage from './pages/CustomViewsPage'
 
 // === Batch 04 Gaps & Frontend Mounts ===
 import CfAgenticUnderwritingAutomationHandling from './pages/CfAgenticUnderwritingAutomationHandling';
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/policy-recommendation" element={<PrivateRoute><PolicyRecommendation /></PrivateRoute>} />
         <Route path="/ai-center" element={<PrivateRoute><AICenter /></PrivateRoute>} />
         <Route path="/pass5-tools" element={<PrivateRoute><Pass5Tools /></PrivateRoute>} />
+        <Route path="/custom-views" element={<PrivateRoute><CustomViewsPage /></PrivateRoute>} />
           {/* // === Batch 04 Gaps & Frontend Mounts === */}
           <Route path="/cf-agentic-underwriting-automation-handling" element={<CfAgenticUnderwritingAutomationHandling />} />
           <Route path="/cf-fraud-syndicate-detection-correlating-ap" element={<CfFraudSyndicateDetectionCorrelatingAp />} />
