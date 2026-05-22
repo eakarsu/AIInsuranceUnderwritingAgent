@@ -73,6 +73,7 @@ app.use('/api/uw-workflow', require('./routes/uwWorkflow'));
 app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/agentic-underwriting', require('./routes/agenticUnderwriting'));
 app.use('/api/renewal-optimizer', require('./routes/renewalOptimizer'));
+app.use('/api/appetite-drift-monitor', require('./routes/appetiteDriftMonitor'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 

@@ -107,17 +107,15 @@ echo -e "\n${BLUE}Starting services with hot reload...${NC}"
 
 # Start backend with nodemon (watches for changes)
 echo -e "  Starting backend on port $BACKEND_PORT..."
-cd backend && npx nodemon server.js &
+( cd "$SCRIPT_DIR/backend" && npx nodemon server.js ) &
 BACKEND_PID=$!
-cd ..
 
 sleep 2
 
 # Start frontend with Vite (HMR built-in)
 echo -e "  Starting frontend on port $FRONTEND_PORT..."
-cd frontend && npx vite --port $FRONTEND_PORT &
+( cd "$SCRIPT_DIR/frontend" && npx vite --port $FRONTEND_PORT ) &
 FRONTEND_PID=$!
-cd ..
 
 # Trap to clean up on exit
 trap "echo -e '\n${YELLOW}Shutting down...${NC}'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit" SIGINT SIGTERM

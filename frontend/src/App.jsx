@@ -6,6 +6,7 @@ import PolicyRecommendation from './pages/PolicyRecommendation'
 import AICenter from './pages/AICenter'
 import Pass5Tools from './pages/Pass5Tools'
 import CustomViewsPage from './pages/CustomViewsPage'
+import AppetiteDriftMonitor from './pages/AppetiteDriftMonitor'
 
 // === Batch 04 Gaps & Frontend Mounts ===
 import CfAgenticUnderwritingAutomationHandling from './pages/CfAgenticUnderwritingAutomationHandling';
@@ -25,6 +26,11 @@ import GapNoWebhookSurfaceForApplicationEvent from './pages/GapNoWebhookSurfaceF
 import GapNoFileUploadForSupportingDocuments from './pages/GapNoFileUploadForSupportingDocuments';
 import GapNoESignatureForBinderspolicies from './pages/GapNoESignatureForBinderspolicies';
 
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
+
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token')
   return token ? children : <Navigate to="/login" />
@@ -34,6 +40,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/insights/timeline" element={<TimelineView />} />
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/feature/:slug" element={<PrivateRoute><FeaturePage /></PrivateRoute>} />
@@ -41,6 +51,7 @@ export default function App() {
         <Route path="/ai-center" element={<PrivateRoute><AICenter /></PrivateRoute>} />
         <Route path="/pass5-tools" element={<PrivateRoute><Pass5Tools /></PrivateRoute>} />
         <Route path="/custom-views" element={<PrivateRoute><CustomViewsPage /></PrivateRoute>} />
+        <Route path="/appetite-drift-monitor" element={<PrivateRoute><AppetiteDriftMonitor /></PrivateRoute>} />
           {/* // === Batch 04 Gaps & Frontend Mounts === */}
           <Route path="/cf-agentic-underwriting-automation-handling" element={<CfAgenticUnderwritingAutomationHandling />} />
           <Route path="/cf-fraud-syndicate-detection-correlating-ap" element={<CfFraudSyndicateDetectionCorrelatingAp />} />

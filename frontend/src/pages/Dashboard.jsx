@@ -20,6 +20,7 @@ const features = [
   { slug: 'renewals', title: 'Policy Renewals', desc: 'AI-recommended renewal terms and retention optimization', icon: '🔄', color: '#805ad5', badge: 'ai', api: '/renewals' },
   { slug: '__policy-recommendation', title: 'Policy Recommendation', desc: 'AI-powered customer-level policy recommendations with coverage and premium ranges', icon: '✨', color: '#6b46c1', badge: 'ai', route: '/policy-recommendation' },
   { slug: '__ai-center', title: 'AI Center', desc: 'Composed AI: risk trajectory, renewals optimization, rule-engine optimization, premium dynamism', icon: '🧠', color: '#553c9a', badge: 'ai', route: '/ai-center' },
+  { slug: '__custom-views', title: 'UW Views', desc: 'Risk distribution chart, factor heatmap, UW decision PDF, and rules editor', icon: '🗂️', color: '#2c5282', badge: 'analytics', route: '/custom-views' },
 ]
 
 const healthColors = { good: { bg: '#c6f6d5', color: '#276749' }, fair: { bg: '#fefcbf', color: '#744210' }, poor: { bg: '#fed7d7', color: '#9b2c2c' } }
