@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { apiGet } from '../api'
+import AppShell from '../components/AppShell'
 
 const features = [
   { slug: 'policies', title: 'Policy Management', desc: 'Create, manage, and track insurance policies across all lines of business', icon: '📋', color: '#3182ce', badge: 'core', api: '/policies' },
@@ -33,7 +34,6 @@ export default function Dashboard() {
   const [portfolioLoading, setPortfolioLoading] = useState(false)
   const [portfolioError, setPortfolioError] = useState('')
   const [showRecs, setShowRecs] = useState(false)
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   useEffect(() => {
     async function loadStats() {
@@ -75,35 +75,13 @@ export default function Dashboard() {
     setPortfolioLoading(false)
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    navigate('/login')
-  }
-
   const ai = portfolio?.ai_analysis
   const structured = ai?.structured
   const portfolioStats = portfolio?.stats
 
   return (
-    <div>
-      <nav className="navbar">
-        <a href="/" className="navbar-brand">
-          <span className="nav-icon">&#x1F6E1;</span>
-          InsurAI Platform
-        </a>
-        <div className="navbar-right">
-          <span className="user-badge">{user.name || 'User'} ({user.role || 'admin'})</span>
-          <button className="btn-logout" onClick={handleLogout}>Sign Out</button>
-        </div>
-      </nav>
-
+    <AppShell title="Dashboard" subtitle="Manage underwriting work from the sidebar and monitor core portfolio health.">
       <div className="dashboard">
-        <div className="dashboard-header">
-          <h1>Dashboard</h1>
-          <p>AI-Powered Insurance Underwriting Platform — Manage policies, assess risks, and detect fraud</p>
-        </div>
-
         <div className="stats-bar">
           <div className="stat-card">
             <div className="stat-value">{stats.policies}</div>
@@ -220,21 +198,29 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="cards-grid">
-          {features.map((f) => (
-            <div key={f.slug} className="feature-card" onClick={() => navigate(f.route || `/feature/${f.slug}`)}>
-              <div className="card-icon" style={{ background: `${f.color}15`, color: f.color }}>
-                {f.icon}
-              </div>
-              <h3>{f.title}</h3>
-              <p>{f.desc}</p>
-              <span className={`card-badge badge-${f.badge}`}>
-                {f.badge === 'ai' ? '✨ AI-Powered' : f.badge === 'analytics' ? '📊 Analytics' : '🔧 Core'}
-              </span>
+        <div className="module-panel">
+          <div className="module-panel-header">
+            <div>
+              <h2>Operational Modules</h2>
+              <p>Use the sidebar for primary navigation. This list shows the available work areas and their operating mode.</p>
             </div>
-          ))}
+          </div>
+          <div className="module-list">
+            {features.map((f) => (
+              <button key={f.slug} className="module-row" onClick={() => navigate(f.route || `/feature/${f.slug}`)}>
+                <span className="module-icon">{f.icon}</span>
+                <span className="module-copy">
+                  <strong>{f.title}</strong>
+                  <small>{f.desc}</small>
+                </span>
+                <span className={`module-badge badge-${f.badge}`}>
+                  {f.badge === 'ai' ? 'AI' : f.badge === 'analytics' ? 'Analytics' : 'Core'}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   )
 }

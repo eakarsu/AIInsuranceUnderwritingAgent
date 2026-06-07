@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { apiGet, apiPost, apiPut, apiDelete } from '../api'
 import ReactMarkdown from 'react-markdown'
+import AppShell from '../components/AppShell'
 
 const featureConfig = {
   'policies': {
@@ -347,7 +348,6 @@ export default function FeaturePage() {
   const [aiRateLimited, setAiRateLimited] = useState(false)
   const [loading, setLoading] = useState(true)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 })
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   useEffect(() => {
     loadItems(1)
@@ -441,27 +441,10 @@ export default function FeaturePage() {
     setAiLoading(false)
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    navigate('/login')
-  }
-
   if (!config) return <div>Feature not found</div>
 
   return (
-    <div>
-      <nav className="navbar">
-        <a href="/" className="navbar-brand">
-          <span className="nav-icon">&#x1F6E1;</span>
-          InsurAI Platform
-        </a>
-        <div className="navbar-right">
-          <span className="user-badge">{user.name || 'User'} ({user.role || 'admin'})</span>
-          <button className="btn-logout" onClick={handleLogout}>Sign Out</button>
-        </div>
-      </nav>
-
+    <AppShell title={config.title} subtitle={`${pagination.total || items.length} items from PostgreSQL`}>
       <div className="feature-page">
         <div className="page-header">
           <div className="page-header-left">
@@ -723,6 +706,6 @@ export default function FeaturePage() {
           </div>
         </div>
       )}
-    </div>
+    </AppShell>
   )
 }

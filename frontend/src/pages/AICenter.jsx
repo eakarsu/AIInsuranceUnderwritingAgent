@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { apiPost } from '../api'
+import AppShell from '../components/AppShell'
+import ReactMarkdown from 'react-markdown'
 
 // Apply pass 4 (mechanical backlog) — AI Center wires the 4 composed
 // endpoints under /api/ai (risk-trajectory, renewals-optimization,
@@ -109,8 +110,185 @@ function PremiumDynamismForm({ onSubmit, loading }) {
   )
 }
 
+function formatLabel(key) {
+  return key
+    .replace(/_pct$/i, ' %')
+    .replace(/_0_100$/i, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function formatValue(key, value) {
+  if (value === null || value === undefined || value === '') return 'N/A'
+  if (typeof value === 'number') {
+    if (/pct|probability|confidence|ratio/i.test(key)) return `${value}%`
+    if (/premium|loss|amount|delta|lift|revenue/i.test(key)) return `$${value.toLocaleString()}`
+    return value.toLocaleString()
+  }
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  return String(value)
+}
+
+function isPrimitive(value) {
+  return value === null || ['string', 'number', 'boolean'].includes(typeof value)
+}
+
+function ResultBadge({ children }) {
+  return <span className="ai-report-badge">{children}</span>
+}
+
+function ScalarMetric({ label, value }) {
+  return (
+    <div className="ai-metric-card">
+      <div className="ai-metric-label">{label}</div>
+      <div className="ai-metric-value">{value}</div>
+    </div>
+  )
+}
+
+function PrimitiveList({ items }) {
+  return (
+    <ul className="ai-clean-list">
+      {items.map((item, index) => <li key={index}>{formatValue('', item)}</li>)}
+    </ul>
+  )
+}
+
+function ObjectTable({ rows }) {
+  const columns = Array.from(new Set(rows.flatMap((row) => Object.keys(row || {})))).slice(0, 7)
+
+  return (
+    <div className="ai-table-wrap">
+      <table className="ai-result-table">
+        <thead>
+          <tr>{columns.map((col) => <th key={col}>{formatLabel(col)}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={index}>
+              {columns.map((col) => (
+                <td key={col}>
+                  {isPrimitive(row?.[col])
+                    ? formatValue(col, row?.[col])
+                    : JSON.stringify(row?.[col])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function KeyValueGrid({ value }) {
+  const entries = Object.entries(value || {})
+
+  return (
+    <div className="ai-key-grid">
+      {entries.map(([key, item]) => (
+        <div key={key} className="ai-key-item">
+          <span>{formatLabel(key)}</span>
+          <strong>{isPrimitive(item) ? formatValue(key, item) : JSON.stringify(item)}</strong>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ResultSection({ title, value }) {
+  if (value === null || value === undefined || value === '') return null
+
+  let body
+  if (Array.isArray(value)) {
+    if (value.length === 0) return null
+    body = value.every(isPrimitive) ? <PrimitiveList items={value} /> : <ObjectTable rows={value} />
+  } else if (typeof value === 'object') {
+    body = <KeyValueGrid value={value} />
+  } else {
+    body = <p className="ai-section-text">{formatValue(title, value)}</p>
+  }
+
+  return (
+    <section className="ai-report-section">
+      <h4>{formatLabel(title)}</h4>
+      {body}
+    </section>
+  )
+}
+
+function AIReport({ result, activeTab }) {
+  const ai = result?.ai_analysis
+  const structured = ai?.structured
+  const contextEntries = Object.entries(result || {}).filter(([key]) => key !== 'ai_analysis')
+  const scalarEntries = structured
+    ? Object.entries(structured).filter(([key, value]) => isPrimitive(value) && !/summary|analysis|disclaimer|rationale|justification/i.test(key))
+    : []
+  const sectionEntries = structured
+    ? Object.entries(structured).filter(([key, value]) => {
+        if (/summary|disclaimer/i.test(key)) return false
+        if (scalarEntries.some(([metricKey]) => metricKey === key)) return false
+        return value !== null && value !== undefined && value !== ''
+      })
+    : []
+
+  const summary = structured?.summary || structured?.detailed_analysis || structured?.justification || structured?.rationale
+  const disclaimer = structured?.disclaimer
+
+  return (
+    <div className="ai-report">
+      <div className="ai-report-header">
+        <div>
+          <div className="ai-report-eyebrow">{TABS.find((t) => t.key === activeTab)?.label}</div>
+          <h3>AI Underwriting Report</h3>
+        </div>
+        <div className="ai-report-badges">
+          {contextEntries.map(([key, value]) => <ResultBadge key={key}>{formatLabel(key)}: {formatValue(key, value)}</ResultBadge>)}
+          {ai?.model && <ResultBadge>{ai.model}</ResultBadge>}
+        </div>
+      </div>
+
+      {structured ? (
+        <>
+          {summary && (
+            <section className="ai-report-summary">
+              <h4>Executive Summary</h4>
+              <p>{summary}</p>
+            </section>
+          )}
+
+          {scalarEntries.length > 0 && (
+            <div className="ai-metric-grid">
+              {scalarEntries.map(([key, value]) => (
+                <ScalarMetric key={key} label={formatLabel(key)} value={formatValue(key, value)} />
+              ))}
+            </div>
+          )}
+
+          {sectionEntries.map(([key, value]) => <ResultSection key={key} title={key} value={value} />)}
+
+          {disclaimer && <div className="ai-disclaimer">{disclaimer}</div>}
+        </>
+      ) : (
+        <section className="ai-report-section">
+          <h4>AI Narrative</h4>
+          <div className="ai-markdown">
+            <ReactMarkdown>{ai?.result || 'No AI output returned.'}</ReactMarkdown>
+          </div>
+        </section>
+      )}
+
+      {(ai?.usage?.total_tokens || ai?.id) && (
+        <div className="ai-report-footer">
+          {ai?.usage?.total_tokens && <span>Tokens: {ai.usage.total_tokens.toLocaleString()}</span>}
+          {ai?.id && <span>Request: {ai.id}</span>}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AICenter() {
-  const navigate = useNavigate()
   const [tab, setTab] = useState(TABS[0].key)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -139,20 +317,8 @@ export default function AICenter() {
   const activeTab = TABS.find((t) => t.key === tab)
 
   return (
-    <div>
-      <nav className="navbar">
-        <a href="/" className="navbar-brand"><span className="nav-icon">&#x1F6E1;</span>InsurAI Platform</a>
-        <div className="navbar-right">
-          <button className="btn-logout" onClick={() => navigate('/')}>Back to Dashboard</button>
-        </div>
-      </nav>
-
+    <AppShell title="AI Center" subtitle="Structured underwriting intelligence for trajectory, renewals, rules, and pricing.">
       <div className="dashboard">
-        <div className="dashboard-header">
-          <h1>AI Center</h1>
-          <p>Composed AI endpoints — risk trajectory, renewals optimization, rule-engine optimization, and premium dynamism.</p>
-        </div>
-
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
           {TABS.map((t) => (
             <button
@@ -198,15 +364,10 @@ export default function AICenter() {
           )}
 
           {result && !loading && (
-            <div style={{ marginTop: 20, padding: 16, background: '#f7fafc', borderRadius: 8 }}>
-              <h3 style={{ marginTop: 0 }}>Result</h3>
-              <pre style={{ background: '#0f172a', color: '#e2e8f0', padding: 14, borderRadius: 8, overflow: 'auto', fontSize: 12, maxHeight: 480 }}>
-                {JSON.stringify(result, null, 2)}
-              </pre>
-            </div>
+            <AIReport result={result} activeTab={tab} />
           )}
         </div>
       </div>
-    </div>
+    </AppShell>
   )
 }

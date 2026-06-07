@@ -3,11 +3,11 @@ const router = express.Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
 const { callOpenRouter } = require('../services/openrouter');
+const { sendPaginatedList } = require('./paginatedList');
 
 router.get('/', auth, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM underwriting_rules ORDER BY created_at DESC');
-    res.json(result.rows);
+    await sendPaginatedList(req, res, pool, 'underwriting_rules');
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
