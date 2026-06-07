@@ -7,6 +7,7 @@ import AICenter from './pages/AICenter'
 import Pass5Tools from './pages/Pass5Tools'
 import CustomViewsPage from './pages/CustomViewsPage'
 import AppetiteDriftMonitor from './pages/AppetiteDriftMonitor'
+import ProductionControls from './pages/ProductionControls'
 
 // === Batch 04 Gaps & Frontend Mounts ===
 import CfAgenticUnderwritingAutomationHandling from './pages/CfAgenticUnderwritingAutomationHandling';
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="/pass5-tools" element={<PrivateRoute><Pass5Tools /></PrivateRoute>} />
         <Route path="/custom-views" element={<PrivateRoute><CustomViewsPage /></PrivateRoute>} />
         <Route path="/appetite-drift-monitor" element={<PrivateRoute><AppetiteDriftMonitor /></PrivateRoute>} />
+        <Route path="/production-controls" element={<PrivateRoute><ProductionControls /></PrivateRoute>} />
           {/* // === Batch 04 Gaps & Frontend Mounts === */}
           <Route path="/cf-agentic-underwriting-automation-handling" element={<CfAgenticUnderwritingAutomationHandling />} />
           <Route path="/cf-fraud-syndicate-detection-correlating-ap" element={<CfFraudSyndicateDetectionCorrelatingAp />} />
