@@ -333,6 +333,231 @@ const featureConfig = {
   },
 }
 
+const AI_FORM_PRESETS = {
+  'claims': [
+    {
+      label: 'Auto injury claim',
+      claim_number: 'CLM-AI-9001',
+      policy_number: 'POL-AUTO-1042',
+      claimant_name: 'Maya Chen',
+      claim_type: 'auto_collision',
+      claim_amount: '18450',
+      status: 'under_review',
+      incident_date: '2026-06-12',
+      description: 'Rear-end collision with soft tissue injury claim, rental reimbursement, and disputed repair estimate.',
+      adjuster_notes: 'Photos support moderate impact; medical treatment is ongoing; compare repair invoice against regional labor rates.',
+    },
+    {
+      label: 'Property water loss',
+      claim_number: 'CLM-AI-9002',
+      policy_number: 'POL-HOME-2281',
+      claimant_name: 'Jordan Patel',
+      claim_type: 'property_damage',
+      claim_amount: '39200',
+      status: 'open',
+      incident_date: '2026-05-29',
+      description: 'Kitchen supply line failure caused flooring, cabinet, and drywall damage across first floor.',
+      adjuster_notes: 'Mitigation invoice received; verify policy water exclusion language and depreciation assumptions.',
+    },
+  ],
+  'risk-assessment': [
+    {
+      label: 'Cyber manufacturer',
+      entity_name: 'Northline Components',
+      entity_type: 'business',
+      risk_category: 'cyber',
+      risk_score: '78',
+      risk_level: 'high',
+      location: 'Detroit, MI',
+      industry: 'Manufacturing',
+      annual_revenue: '24500000',
+      employee_count: '118',
+      factors: 'Legacy ERP, third-party remote access, no formal incident response test, expanding customer data retention.',
+      status: 'under_review',
+    },
+    {
+      label: 'Coastal property',
+      entity_name: 'Bayview Retail Center',
+      entity_type: 'property',
+      risk_category: 'property',
+      risk_score: '71',
+      risk_level: 'high',
+      location: 'Charleston, SC',
+      industry: 'Retail real estate',
+      annual_revenue: '8600000',
+      employee_count: '36',
+      factors: 'Coastal wind exposure, aging roof, flood-zone adjacency, strong tenant occupancy, recent electrical upgrades.',
+      status: 'pending',
+    },
+  ],
+  'underwriting-rules': [
+    {
+      label: 'Auto claims rule',
+      rule_name: 'Auto Frequency Review',
+      rule_code: 'AUTO-FREQ-026',
+      category: 'eligibility',
+      condition_text: 'Applicant has two or more at-fault auto claims in the last 36 months or one severe bodily injury claim.',
+      action_text: 'Route to senior underwriter, require updated MVR, and apply surcharge review before bind.',
+      priority: '8',
+      policy_type: 'auto',
+      threshold_value: '2',
+      status: 'active',
+      description: 'Controls claim-frequency risk while allowing manual override for clean recent driving evidence.',
+    },
+    {
+      label: 'Cyber MFA rule',
+      rule_name: 'Cyber MFA Control Gate',
+      rule_code: 'CYB-MFA-014',
+      category: 'approval',
+      condition_text: 'Business cyber applicant lacks MFA for administrator access or remote network access.',
+      action_text: 'Decline cyber coverage or require documented remediation before quote release.',
+      priority: '9',
+      policy_type: 'commercial',
+      threshold_value: '1',
+      status: 'draft',
+      description: 'Targets high-severity ransomware exposure and aligns with current cyber underwriting appetite.',
+    },
+  ],
+  'fraud-detection': [
+    {
+      label: 'Inflated claim',
+      alert_number: 'FRD-AI-7101',
+      policy_number: 'POL-AUTO-1042',
+      claim_number: 'CLM-AI-9001',
+      alert_type: 'inflated_claim',
+      severity: 'high',
+      suspect_name: 'Maya Chen',
+      estimated_loss: '9200',
+      description: 'Repair estimate is materially above comparable regional estimates and includes unrelated prior damage.',
+      indicators: 'Late supplement, repeated vendor referral, inconsistent loss photos, prior similar claim within 18 months.',
+      status: 'investigating',
+    },
+    {
+      label: 'Duplicate medical',
+      alert_number: 'FRD-AI-7102',
+      policy_number: 'POL-HEALTH-3318',
+      claim_number: 'CLM-MED-4410',
+      alert_type: 'duplicate_claim',
+      severity: 'medium',
+      suspect_name: 'Riverside Therapy Group',
+      estimated_loss: '4800',
+      description: 'Provider submitted overlapping treatment dates under two claim identifiers for same claimant.',
+      indicators: 'Duplicate CPT mix, same service address, matching invoice totals, inconsistent provider notes.',
+      status: 'open',
+    },
+  ],
+  'premium-calculator': [
+    {
+      label: 'Preferred auto',
+      calculation_name: 'Preferred Auto Renewal',
+      policy_type: 'auto',
+      base_premium: '1280',
+      risk_multiplier: '1.12',
+      coverage_amount: '250000',
+      deductible: '750',
+      customer_name: 'Avery Johnson',
+      factors: 'Clean MVR, commute mileage increased, garaging ZIP has rising theft frequency, multi-policy discount applies.',
+      final_premium: '1434',
+      status: 'draft',
+    },
+    {
+      label: 'Commercial cyber',
+      calculation_name: 'Cyber Manufacturing Quote',
+      policy_type: 'cyber',
+      base_premium: '9200',
+      risk_multiplier: '1.36',
+      coverage_amount: '2000000',
+      deductible: '10000',
+      customer_name: 'Northline Components',
+      factors: 'Revenue growth, remote access exposure, partial MFA deployment, prior phishing incident, strong backup controls.',
+      final_premium: '12512',
+      status: 'approved',
+    },
+  ],
+  'documents': [
+    {
+      label: 'Police report',
+      document_name: 'Auto Collision Police Report',
+      document_type: 'police_report',
+      policy_number: 'POL-AUTO-1042',
+      customer_name: 'Maya Chen',
+      content_summary: 'Police narrative confirms rear-end collision, weather clear, claimant transported for evaluation, citation issued to other driver.',
+      file_size: '2.4 MB',
+      classification: 'claim_evidence',
+      confidence_score: '91',
+      status: 'pending',
+    },
+    {
+      label: 'Application packet',
+      document_name: 'Commercial Cyber Application',
+      document_type: 'application',
+      policy_number: 'POL-CYB-8830',
+      customer_name: 'Northline Components',
+      content_summary: 'Application includes revenue, employee count, security control questionnaire, remote access details, and prior incident disclosure.',
+      file_size: '4.8 MB',
+      classification: 'policy_document',
+      confidence_score: '88',
+      status: 'analyzed',
+    },
+  ],
+  'loss-ratio': [
+    {
+      label: 'Auto trend',
+      analysis_name: 'Auto Q2 Loss Ratio Review',
+      policy_type: 'auto',
+      period: '2026-Q2',
+      earned_premium: '1840000',
+      incurred_losses: '1264000',
+      loss_ratio: '68.7',
+      expense_ratio: '24.5',
+      combined_ratio: '93.2',
+      trend: 'deteriorating',
+      status: 'current',
+    },
+    {
+      label: 'Commercial stable',
+      analysis_name: 'Commercial Liability Margin Check',
+      policy_type: 'commercial',
+      period: '2026-H1',
+      earned_premium: '3120000',
+      incurred_losses: '1760000',
+      loss_ratio: '56.4',
+      expense_ratio: '28.1',
+      combined_ratio: '84.5',
+      trend: 'stable',
+      status: 'projected',
+    },
+  ],
+  'renewals': [
+    {
+      label: 'Auto reprice',
+      policy_number: 'POL-AUTO-1042',
+      customer_name: 'Avery Johnson',
+      policy_type: 'auto',
+      current_premium: '1280',
+      proposed_premium: '1434',
+      renewal_date: '2026-08-15',
+      expiry_date: '2026-09-01',
+      risk_change: 'increased',
+      claims_history: 'One comprehensive theft claim, higher commute mileage, no at-fault accidents.',
+      status: 'pending',
+    },
+    {
+      label: 'Home retention',
+      policy_number: 'POL-HOME-2281',
+      customer_name: 'Jordan Patel',
+      policy_type: 'home',
+      current_premium: '2140',
+      proposed_premium: '2255',
+      renewal_date: '2026-07-20',
+      expiry_date: '2026-08-01',
+      risk_change: 'none',
+      claims_history: 'Water loss closed with mitigation complete; no prior losses in five years.',
+      status: 'approved',
+    },
+  ],
+}
+
 export default function FeaturePage() {
   const { slug } = useParams()
   const navigate = useNavigate()
@@ -382,6 +607,12 @@ export default function FeaturePage() {
     config.fields.forEach(f => { initial[f.key] = '' })
     setFormData(initial)
     setShowForm(true)
+  }
+
+  function handleFormPreset(preset) {
+    const next = {}
+    config.fields.forEach(f => { next[f.key] = preset[f.key] ?? '' })
+    setFormData(next)
   }
 
   function handleEdit() {
@@ -442,6 +673,7 @@ export default function FeaturePage() {
   }
 
   if (!config) return <div>Feature not found</div>
+  const formPresets = AI_FORM_PRESETS[slug] || []
 
   return (
     <AppShell title={config.title} subtitle={`${pagination.total || items.length} items from PostgreSQL`}>
@@ -663,6 +895,20 @@ export default function FeaturePage() {
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
+                {formPresets.length > 0 && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+                    {formPresets.map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => handleFormPreset(preset)}
+                        style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #bee3f8', background: '#ebf8ff', color: '#2b6cb0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="form-grid">
                   {config.fields.map(f => (
                     <div key={f.key} className={`form-group ${f.fullWidth ? 'full-width' : ''}`}>

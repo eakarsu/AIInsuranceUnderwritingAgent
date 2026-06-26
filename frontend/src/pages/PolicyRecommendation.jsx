@@ -13,9 +13,42 @@ export default function PolicyRecommendation() {
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
 
+  const presets = [
+    {
+      label: 'Family bundle',
+      customerId: '1',
+      profile: 'Married homeowner, two vehicles, two dependents, suburban ZIP, no major claims in five years, wants bundled home and auto coverage with umbrella protection.',
+      budget: '4200',
+      riskTolerance: 'low',
+    },
+    {
+      label: 'Growth business',
+      customerId: '5',
+      profile: 'Commercial customer with 42 employees, delivery exposure, leased office, growing payroll, prior small liability claim, needs general liability, commercial auto, cyber, and workers compensation guidance.',
+      budget: '18500',
+      riskTolerance: 'medium',
+    },
+    {
+      label: 'High asset client',
+      customerId: '9',
+      profile: 'High-net-worth individual with primary residence, vacation property, collector vehicle, higher liability exposure, and preference for broad coverage over lowest premium.',
+      budget: '12000',
+      riskTolerance: 'high',
+    },
+  ]
+
   useEffect(() => {
     apiGet('/customers').then((d) => setCustomers(Array.isArray(d) ? d : (d?.data || []))).catch(() => setCustomers([]))
   }, [])
+
+  const applyPreset = (preset) => {
+    setCustomerId(preset.customerId)
+    setProfile(preset.profile)
+    setBudget(preset.budget)
+    setRiskTolerance(preset.riskTolerance)
+    setError('')
+    setResult(null)
+  }
 
   const submit = async (e) => {
     e.preventDefault()
@@ -63,6 +96,19 @@ export default function PolicyRecommendation() {
 
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24, marginBottom: 24 }}>
           <form onSubmit={submit}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+              {presets.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => applyPreset(preset)}
+                  style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #bee3f8', background: '#ebf8ff', color: '#2b6cb0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#2d3748' }}>Customer</label>
               <select

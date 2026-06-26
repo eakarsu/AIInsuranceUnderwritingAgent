@@ -21,12 +21,46 @@ function FieldLabel({ children }) {
 }
 
 const inputStyle = { width: '100%', padding: '10px 12px', border: '1px solid #cbd5e0', borderRadius: 8, fontSize: 14 }
+const presetWrapStyle = { display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }
+const presetButtonStyle = {
+  padding: '8px 12px',
+  borderRadius: 8,
+  border: '1px solid #bee3f8',
+  background: '#ebf8ff',
+  color: '#2b6cb0',
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: 'pointer',
+}
+
+function PresetButtons({ presets, onApply }) {
+  return (
+    <div style={presetWrapStyle}>
+      {presets.map((preset) => (
+        <button key={preset.label} type="button" onClick={() => onApply(preset)} style={presetButtonStyle}>
+          {preset.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 function RiskTrajectoryForm({ onSubmit, loading }) {
   const [customerId, setCustomerId] = useState('')
   const [horizon, setHorizon] = useState('24')
+  const presets = [
+    { label: 'Auto customer', customerId: '1', horizon: '12' },
+    { label: 'Commercial risk', customerId: '5', horizon: '24' },
+    { label: 'Fleet outlook', customerId: '12', horizon: '36' },
+  ]
+  const applyPreset = (preset) => {
+    setCustomerId(preset.customerId)
+    setHorizon(preset.horizon)
+  }
+
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit({ customer_id: Number(customerId), horizon_months: Number(horizon) }) }}>
+      <PresetButtons presets={presets} onApply={applyPreset} />
       <div style={{ marginBottom: 14 }}>
         <FieldLabel>Customer ID</FieldLabel>
         <input type="number" value={customerId} onChange={(e) => setCustomerId(e.target.value)} placeholder="e.g. 42" required style={inputStyle} />
@@ -49,8 +83,19 @@ function RiskTrajectoryForm({ onSubmit, loading }) {
 function RenewalsOptForm({ onSubmit, loading }) {
   const [days, setDays] = useState('60')
   const [target, setTarget] = useState('')
+  const presets = [
+    { label: '30-day retention', days: '30', target: 'retain 92% premium while keeping loss ratio below 64%' },
+    { label: '60-day margin', days: '60', target: 'improve margin on high-loss segments while preserving strategic accounts' },
+    { label: '120-day cleanup', days: '120', target: 'prioritize reunderwriting for deteriorating accounts and nonrenewal candidates' },
+  ]
+  const applyPreset = (preset) => {
+    setDays(preset.days)
+    setTarget(preset.target)
+  }
+
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit({ lookahead_days: Number(days), portfolio_target: target || undefined }) }}>
+      <PresetButtons presets={presets} onApply={applyPreset} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 14, marginBottom: 14 }}>
         <div>
           <FieldLabel>Lookahead (days)</FieldLabel>
@@ -70,8 +115,18 @@ function RenewalsOptForm({ onSubmit, loading }) {
 
 function RuleEngineOptForm({ onSubmit, loading }) {
   const [focus, setFocus] = useState('')
+  const presets = [
+    { label: 'Auto rules', focus: 'auto eligibility, youthful-driver surcharge, prior claims, garaging ZIP exposure' },
+    { label: 'Property rules', focus: 'property age, wildfire exposure, roof condition, deductible adequacy' },
+    { label: 'Commercial rules', focus: 'commercial liability, payroll bands, class-code drift, prior loss frequency' },
+  ]
+  const applyPreset = (preset) => {
+    setFocus(preset.focus)
+  }
+
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit({ focus_area: focus || undefined }) }}>
+      <PresetButtons presets={presets} onApply={applyPreset} />
       <div style={{ marginBottom: 14 }}>
         <FieldLabel>Focus Area (optional)</FieldLabel>
         <input value={focus} onChange={(e) => setFocus(e.target.value)} placeholder="e.g. auto, property, commercial, all" style={inputStyle} />
@@ -87,8 +142,20 @@ function PremiumDynamismForm({ onSubmit, loading }) {
   const [policyId, setPolicyId] = useState('')
   const [window, setWindow] = useState('30')
   const [market, setMarket] = useState('')
+  const presets = [
+    { label: 'Auto price check', policyId: '1', window: '14', market: 'Competitors lowered preferred auto pricing by 3%, claim frequency is stable, retention is below target.' },
+    { label: 'CAT pressure', policyId: '8', window: '45', market: 'Recent severe weather increased property loss expectations, reinsurance cost is up, regulator filings require documented rationale.' },
+    { label: 'Commercial renewal', policyId: '15', window: '90', market: 'Commercial liability rates are firming, wage inflation is increasing exposure, account has two minor losses.' },
+  ]
+  const applyPreset = (preset) => {
+    setPolicyId(preset.policyId)
+    setWindow(preset.window)
+    setMarket(preset.market)
+  }
+
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit({ policy_id: policyId ? Number(policyId) : undefined, time_window_days: Number(window), market_context: market || undefined }) }}>
+      <PresetButtons presets={presets} onApply={applyPreset} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
         <div>
           <FieldLabel>Policy ID (optional)</FieldLabel>
