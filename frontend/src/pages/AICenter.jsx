@@ -200,6 +200,85 @@ function isPrimitive(value) {
   return value === null || ['string', 'number', 'boolean'].includes(typeof value)
 }
 
+function formatNestedValue(value) {
+  if (isPrimitive(value)) return formatValue('', value)
+  if (Array.isArray(value)) {
+    return value.map((item) => formatNestedValue(item)).join(', ')
+  }
+  if (value && typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, item]) => `${formatLabel(key)}: ${formatNestedValue(item)}`)
+      .join(' · ')
+  }
+  return 'N/A'
+}
+
+function parseStructuredResult(value, depth = 0) {
+  if (value && typeof value === 'object') return value
+  if (!value || typeof value !== 'string' || depth > 2) return null
+  const trimmed = value.trim()
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)
+  const candidate = fenced ? fenced[1].trim() : trimmed
+  const repairJson = (text) => text
+    .replace(/,\s*([}\]])/g, '$1')
+    .replace(/(:\s*-?\d{1,3}(?:,\d{3})+(?:\.\d+)?)(?=\s*[,}\]])/g, (match) => match.replace(/,/g, ''))
+  const parseCandidate = (text) => {
+    const parsed = JSON.parse(repairJson(text))
+    if (typeof parsed === 'string') return parseStructuredResult(parsed, depth + 1)
+    return parsed && typeof parsed === 'object' ? parsed : null
+  }
+
+  try { return parseCandidate(candidate) } catch {}
+
+  const objectStart = candidate.indexOf('{')
+  const objectEnd = candidate.lastIndexOf('}')
+  if (objectStart !== -1 && objectEnd !== -1 && objectEnd > objectStart) {
+    try { return parseCandidate(candidate.slice(objectStart, objectEnd + 1)) } catch {}
+  }
+
+  const arrayStart = candidate.indexOf('[')
+  const arrayEnd = candidate.lastIndexOf(']')
+  if (arrayStart !== -1 && arrayEnd !== -1 && arrayEnd > arrayStart) {
+    try { return parseCandidate(candidate.slice(arrayStart, arrayEnd + 1)) } catch {}
+  }
+
+  return null
+}
+
+function looksLikeStructuredText(value) {
+  if (typeof value !== 'string') return false
+  const trimmed = value.trim()
+  return trimmed.startsWith('{') || trimmed.startsWith('[') || /```json/i.test(trimmed)
+}
+
+function stripStructuredFence(value) {
+  if (typeof value !== 'string') return ''
+  const trimmed = value.trim()
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)
+  return (fenced ? fenced[1] : trimmed).trim()
+}
+
+function readableStructuredText(value) {
+  const clean = stripStructuredFence(value)
+    .replace(/[{}[\]"]/g, '')
+    .replace(/,$/gm, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  const rows = clean
+    .map((line) => {
+      const [rawKey, ...rest] = line.split(':')
+      if (!rest.length) return line.replace(/^[-,]+/, '').trim()
+      const key = rawKey.replace(/^[-,]+/, '').trim()
+      const detail = rest.join(':').replace(/,$/, '').trim()
+      return detail ? `${formatLabel(key)}: ${detail}` : formatLabel(key)
+    })
+    .filter((line) => line && !/^[,]+$/.test(line))
+
+  return rows.length ? rows : ['No AI output returned.']
+}
+
 function ResultBadge({ children }) {
   return <span className="ai-report-badge">{children}</span>
 }
@@ -237,7 +316,7 @@ function ObjectTable({ rows }) {
                 <td key={col}>
                   {isPrimitive(row?.[col])
                     ? formatValue(col, row?.[col])
-                    : JSON.stringify(row?.[col])}
+                    : formatNestedValue(row?.[col])}
                 </td>
               ))}
             </tr>
@@ -256,7 +335,7 @@ function KeyValueGrid({ value }) {
       {entries.map(([key, item]) => (
         <div key={key} className="ai-key-item">
           <span>{formatLabel(key)}</span>
-          <strong>{isPrimitive(item) ? formatValue(key, item) : JSON.stringify(item)}</strong>
+          <strong>{isPrimitive(item) ? formatValue(key, item) : formatNestedValue(item)}</strong>
         </div>
       ))}
     </div>
@@ -286,7 +365,7 @@ function ResultSection({ title, value }) {
 
 function AIReport({ result, activeTab }) {
   const ai = result?.ai_analysis
-  const structured = ai?.structured
+  const structured = parseStructuredResult(ai?.structured) || parseStructuredResult(ai?.result)
   const contextEntries = Object.entries(result || {}).filter(([key]) => key !== 'ai_analysis')
   const scalarEntries = structured
     ? Object.entries(structured).filter(([key, value]) => isPrimitive(value) && !/summary|analysis|disclaimer|rationale|justification/i.test(key))
@@ -338,10 +417,16 @@ function AIReport({ result, activeTab }) {
         </>
       ) : (
         <section className="ai-report-section">
-          <h4>AI Narrative</h4>
-          <div className="ai-markdown">
-            <ReactMarkdown>{ai?.result || 'No AI output returned.'}</ReactMarkdown>
-          </div>
+          <h4>{looksLikeStructuredText(ai?.result) ? 'AI Response' : 'AI Narrative'}</h4>
+          {looksLikeStructuredText(ai?.result) ? (
+            <ul className="ai-clean-list">
+              {readableStructuredText(ai?.result).map((line, index) => <li key={index}>{line}</li>)}
+            </ul>
+          ) : (
+            <div className="ai-markdown">
+              <ReactMarkdown>{ai?.result || 'No AI output returned.'}</ReactMarkdown>
+            </div>
+          )}
         </section>
       )}
 

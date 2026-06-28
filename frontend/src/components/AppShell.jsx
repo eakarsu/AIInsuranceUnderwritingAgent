@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { navItems } from '../navigation'
+import ChatBot from './ChatBot'
 
 export default function AppShell({ children, title = 'Dashboard', subtitle = 'AI-Powered Insurance Underwriting Platform' }) {
   const navigate = useNavigate()
@@ -53,6 +54,7 @@ export default function AppShell({ children, title = 'Dashboard', subtitle = 'AI
         </header>
         {children}
       </main>
+      <ChatBot pageContext={{ title, subtitle, path: window.location.pathname }} />
     </div>
   )
 }

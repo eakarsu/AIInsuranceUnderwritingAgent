@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiGet, apiPost } from '../api'
+import ProfessionalAIReport from '../components/ProfessionalAIReport'
 
 export default function PolicyRecommendation() {
   const navigate = useNavigate()
@@ -76,8 +77,6 @@ export default function PolicyRecommendation() {
     }
     setLoading(false)
   }
-
-  const structured = result?.structured
 
   return (
     <div>
@@ -186,46 +185,15 @@ export default function PolicyRecommendation() {
           )}
 
           {result && !loading && (
-            <div style={{ marginTop: 20, padding: 16, background: '#f7fafc', borderRadius: 8 }}>
-              <h3 style={{ marginTop: 0 }}>Recommendation</h3>
-              {structured?.recommendations && structured.recommendations.length > 0 ? (
-                <div style={{ display: 'grid', gap: 12 }}>
-                  {structured.recommendations.map((r, i) => (
-                    <div key={i} style={{ background: 'white', padding: 14, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                        <strong style={{ fontSize: 15, color: '#2d3748' }}>{r.policy_type || `Recommendation ${i + 1}`}</strong>
-                        {r.fit_score !== undefined && (
-                          <span style={{ background: '#ebf8ff', color: '#2b6cb0', padding: '2px 10px', borderRadius: 12, fontWeight: 700, fontSize: 12 }}>
-                            Fit: {r.fit_score}
-                          </span>
-                        )}
-                      </div>
-                      {r.coverage_range && <div style={{ fontSize: 13, color: '#4a5568', marginBottom: 4 }}><strong>Coverage:</strong> {typeof r.coverage_range === 'string' ? r.coverage_range : JSON.stringify(r.coverage_range)}</div>}
-                      {r.deductible && <div style={{ fontSize: 13, color: '#4a5568', marginBottom: 4 }}><strong>Deductible:</strong> {r.deductible}</div>}
-                      {r.premium_estimate && <div style={{ fontSize: 13, color: '#4a5568', marginBottom: 4 }}><strong>Premium:</strong> {typeof r.premium_estimate === 'string' ? r.premium_estimate : JSON.stringify(r.premium_estimate)}</div>}
-                      {r.rationale && <div style={{ fontSize: 13, color: '#4a5568', marginTop: 6 }}>{r.rationale}</div>}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <pre style={{ background: '#0f172a', color: '#e2e8f0', padding: 14, borderRadius: 8, overflow: 'auto', fontSize: 12, maxHeight: 480 }}>
-                  {JSON.stringify(result, null, 2)}
-                </pre>
-              )}
-
-              {structured?.gap_analysis && (
-                <div style={{ marginTop: 16, padding: 12, background: '#fffaf0', border: '1px solid #fbd38d', borderRadius: 8 }}>
-                  <strong style={{ color: '#744210' }}>Gap Analysis:</strong>
-                  <div style={{ fontSize: 13, color: '#4a5568', marginTop: 4 }}>
-                    {typeof structured.gap_analysis === 'string' ? structured.gap_analysis : JSON.stringify(structured.gap_analysis)}
-                  </div>
-                </div>
-              )}
-
-              {structured?.disclaimer && (
-                <div style={{ marginTop: 12, fontSize: 12, color: '#718096', fontStyle: 'italic' }}>{structured.disclaimer}</div>
-              )}
-            </div>
+            <ProfessionalAIReport
+              title="Policy Recommendation"
+              eyebrow="AI Recommendation"
+              data={result.ai_analysis || result}
+              context={[
+                { label: 'Customer', value: customerId || 'Inline profile' },
+                { label: 'Budget', value: budget ? `$${Number(budget).toLocaleString()}` : 'N/A' },
+              ]}
+            />
           )}
         </div>
       </div>

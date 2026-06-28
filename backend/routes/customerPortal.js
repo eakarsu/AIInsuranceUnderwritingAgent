@@ -77,12 +77,14 @@ router.get('/policies', auth, async (req, res) => {
   try {
     const cid = Number(req.query.customer_id) || req.user?.customer_id;
     if (!cid) return res.status(400).json({ error: 'customer_id required' });
+    const customer = await pool.query(`SELECT * FROM customers WHERE id = $1`, [cid]);
+    if (customer.rows.length === 0) return res.status(404).json({ error: 'Customer not found' });
     const r = await pool.query(
-      `SELECT id, policy_number, status, premium_amount, coverage_amount, effective_date, expiration_date, policy_type
-       FROM policies WHERE customer_id = $1 ORDER BY effective_date DESC NULLS LAST LIMIT 50`,
-      [cid]
-    ).catch(() => ({ rows: [] }));
-    res.json({ policies: r.rows });
+      `SELECT id, policy_number, status, premium, coverage_amount, start_date, end_date, policy_type, deductible, description
+       FROM policies WHERE customer_name = $1 ORDER BY start_date DESC NULLS LAST LIMIT 50`,
+      [customer.rows[0].name]
+    );
+    res.json({ customer: customer.rows[0], policies: r.rows });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

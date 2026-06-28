@@ -8,6 +8,12 @@ import Pass5Tools from './pages/Pass5Tools'
 import CustomViewsPage from './pages/CustomViewsPage'
 import AppetiteDriftMonitor from './pages/AppetiteDriftMonitor'
 import ProductionControls from './pages/ProductionControls'
+import CustomerPortal from './pages/CustomerPortal'
+import AgentPortal from './pages/AgentPortal'
+import UWWorkflow from './pages/UWWorkflow'
+import IntegrationCenter from './pages/IntegrationCenter'
+import AgenticUnderwriting from './pages/AgenticUnderwriting'
+import RenewalOptimizer from './pages/RenewalOptimizer'
 
 // === Batch 04 Gaps & Frontend Mounts ===
 import CfAgenticUnderwritingAutomationHandling from './pages/CfAgenticUnderwritingAutomationHandling';
@@ -54,6 +60,12 @@ export default function App() {
         <Route path="/custom-views" element={<PrivateRoute><CustomViewsPage /></PrivateRoute>} />
         <Route path="/appetite-drift-monitor" element={<PrivateRoute><AppetiteDriftMonitor /></PrivateRoute>} />
         <Route path="/production-controls" element={<PrivateRoute><ProductionControls /></PrivateRoute>} />
+        <Route path="/customer-portal" element={<PrivateRoute><CustomerPortal /></PrivateRoute>} />
+        <Route path="/agent-portal" element={<PrivateRoute><AgentPortal /></PrivateRoute>} />
+        <Route path="/uw-workflow" element={<PrivateRoute><UWWorkflow /></PrivateRoute>} />
+        <Route path="/integration-center" element={<PrivateRoute><IntegrationCenter /></PrivateRoute>} />
+        <Route path="/agentic-underwriting" element={<PrivateRoute><AgenticUnderwriting /></PrivateRoute>} />
+        <Route path="/renewal-optimizer" element={<PrivateRoute><RenewalOptimizer /></PrivateRoute>} />
           {/* // === Batch 04 Gaps & Frontend Mounts === */}
           <Route path="/cf-agentic-underwriting-automation-handling" element={<CfAgenticUnderwritingAutomationHandling />} />
           <Route path="/cf-fraud-syndicate-detection-correlating-ap" element={<CfFraudSyndicateDetectionCorrelatingAp />} />

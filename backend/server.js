@@ -35,6 +35,7 @@ async function auditMiddleware(req, res, next) {
 app.use('/api', auditMiddleware);
 
 const { aiRateLimiter } = require('./middleware/rateLimiter');
+const { createOpsRouter } = require('./routes/opsModules');
 
 // === Batch 04 Gaps & Frontend Mounts ===
 const route_gap_no_risk_score_endpoint_backed_by = require('./routes/gap-no-risk-score-endpoint-backed-by');
@@ -66,6 +67,8 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/renewals', require('./routes/renewals'));
 app.use('/api/analytics', aiRateLimiter, require('./routes/analytics'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/field-calculations', require('./routes/fieldCalculations'));
+app.use('/api/chatbot', require('./routes/chatbot'));
 // Apply pass 5 — additive
 app.use('/api/customer-portal', require('./routes/customerPortal'));
 app.use('/api/agent-portal', require('./routes/agentPortal'));
@@ -74,6 +77,13 @@ app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/agentic-underwriting', require('./routes/agenticUnderwriting'));
 app.use('/api/renewal-optimizer', require('./routes/renewalOptimizer'));
 app.use('/api/appetite-drift-monitor', require('./routes/appetiteDriftMonitor'));
+app.use('/api/quote-bind-issue', createOpsRouter('quote_bind_issue'));
+app.use('/api/billing-payments', createOpsRouter('billing_payments'));
+app.use('/api/endorsements', createOpsRouter('endorsements'));
+app.use('/api/cancellations', createOpsRouter('cancellations'));
+app.use('/api/esignature-packets', createOpsRouter('esignature_packets'));
+app.use('/api/rbac-admin', createOpsRouter('rbac_admin'));
+app.use('/api/audit-exports', createOpsRouter('audit_exports'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 

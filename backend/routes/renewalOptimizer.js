@@ -20,8 +20,8 @@ router.post('/predict', async (req, res) => {
     } else {
       try {
         policies = await pool.query(
-          `SELECT * FROM policies WHERE expires_at < NOW() + INTERVAL '60 days' AND status = 'active'
-           ORDER BY expires_at ASC LIMIT 30`
+          `SELECT * FROM policies WHERE end_date < NOW() + INTERVAL '365 days' AND status = 'active'
+           ORDER BY end_date ASC LIMIT 30`
         );
       } catch (_) {}
     }
@@ -30,7 +30,7 @@ router.post('/predict', async (req, res) => {
     const enriched = await Promise.all(policies.rows.map(async p => {
       let claims = 0;
       try {
-        const r = await pool.query(`SELECT COUNT(*)::int AS n FROM claims WHERE policy_id = $1`, [p.id]);
+        const r = await pool.query(`SELECT COUNT(*)::int AS n FROM claims WHERE policy_number = $1`, [p.policy_number]);
         claims = r.rows[0].n;
       } catch (_) {}
       return { ...p, claim_count: claims };
@@ -59,10 +59,10 @@ Return JSON:
 }`;
 
     const raw = await callOpenRouter(systemPrompt, userPrompt);
-    const text = typeof raw === 'string' ? raw : (raw?.content || '');
-    const parsed = parseAIJson(text) || { notes: text };
+    if (!raw.success) return res.status(502).json({ error: raw.result || 'OpenRouter failure' });
+    const parsed = raw.structured || parseAIJson(raw.result) || { notes: raw.result };
 
-    res.json({ count: enriched.length, predictions: parsed });
+    res.json({ count: enriched.length, predictions: parsed, model: raw.model, usage: raw.usage, id: raw.id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -71,9 +71,9 @@ Return JSON:
 router.get('/upcoming', async (_req, res) => {
   try {
     const r = await pool.query(
-      `SELECT id, customer_id, type, premium, expires_at FROM policies
-       WHERE expires_at < NOW() + INTERVAL '60 days' AND status = 'active'
-       ORDER BY expires_at ASC LIMIT 50`
+      `SELECT id, customer_name, policy_number, policy_type, premium, end_date FROM policies
+       WHERE end_date < NOW() + INTERVAL '365 days' AND status = 'active'
+       ORDER BY end_date ASC LIMIT 50`
     ).catch(() => ({ rows: [] }));
     res.json(r.rows);
   } catch (err) {

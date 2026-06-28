@@ -17,11 +17,13 @@ router.post('/triage', async (req, res) => {
 
     let app = null, rules = { rows: [] };
     try {
-      const r = await pool.query(`SELECT * FROM uw_applications WHERE id = $1`, [application_id]);
-      app = r.rows[0] || null;
+      if (/^\d+$/.test(String(application_id))) {
+        const r = await pool.query(`SELECT * FROM policies WHERE id = $1`, [Number(application_id)]);
+        app = r.rows[0] ? { application_id, source: 'policy', ...r.rows[0] } : null;
+      }
     } catch (_) {}
     try {
-      rules = await pool.query(`SELECT id, name, condition, threshold FROM underwriting_rules LIMIT 100`);
+      rules = await pool.query(`SELECT id, rule_name, category, condition_text, threshold_value, action_text, priority, policy_type FROM underwriting_rules LIMIT 100`);
     } catch (_) {}
 
     const systemPrompt = `You are an agentic underwriter. Auto-approve simple low-risk applications, escalate
@@ -45,8 +47,8 @@ Return JSON:
 }`;
 
     const raw = await callOpenRouter(systemPrompt, userPrompt);
-    const text = typeof raw === 'string' ? raw : (raw?.content || '');
-    const parsed = parseAIJson(text) || { notes: text };
+    if (!raw.success) return res.status(502).json({ error: raw.result || 'OpenRouter failure' });
+    const parsed = raw.structured || parseAIJson(raw.result) || { notes: raw.result };
 
     try {
       await pool.query(
@@ -56,7 +58,7 @@ Return JSON:
       ).catch(() => {});
     } catch (_) {}
 
-    res.json({ application_id, triage: parsed });
+    res.json({ application_id, triage: parsed, model: raw.model, usage: raw.usage, id: raw.id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,11 +1,35 @@
 require('dotenv').config({ path: '../../.env' });
 
 function parseAIJson(text) {
-  try { return JSON.parse(text); } catch (e) {}
-  const stripped = text.replace(/```(?:json)?\n?/g, '').trim();
-  try { return JSON.parse(stripped); } catch (e) {}
-  const start = text.indexOf('{'); const end = text.lastIndexOf('}');
-  if (start !== -1 && end !== -1) { try { return JSON.parse(text.slice(start, end + 1)); } catch (e) {} }
+  if (!text) return null;
+  if (typeof text === 'object') return text;
+
+  const repairJson = (value) => value
+    .replace(/,\s*([}\]])/g, '$1')
+    .replace(/(:\s*-?\d{1,3}(?:,\d{3})+(?:\.\d+)?)(?=\s*[,}\]])/g, (match) => match.replace(/,/g, ''));
+  const parseCandidate = (value) => {
+    const parsed = JSON.parse(repairJson(value));
+    if (typeof parsed === 'string') return parseAIJson(parsed);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  };
+
+  try { return parseCandidate(text); } catch (e) {}
+
+  const stripped = String(text).replace(/```(?:json)?\n?/g, '').replace(/```/g, '').trim();
+  try { return parseCandidate(stripped); } catch (e) {}
+
+  const objectStart = stripped.indexOf('{');
+  const objectEnd = stripped.lastIndexOf('}');
+  if (objectStart !== -1 && objectEnd !== -1 && objectEnd > objectStart) {
+    try { return parseCandidate(stripped.slice(objectStart, objectEnd + 1)); } catch (e) {}
+  }
+
+  const arrayStart = stripped.indexOf('[');
+  const arrayEnd = stripped.lastIndexOf(']');
+  if (arrayStart !== -1 && arrayEnd !== -1 && arrayEnd > arrayStart) {
+    try { return parseCandidate(stripped.slice(arrayStart, arrayEnd + 1)); } catch (e) {}
+  }
+
   return null;
 }
 
@@ -34,7 +58,7 @@ async function callOpenRouter(systemPrompt, userPrompt) {
       body: JSON.stringify({
         model: model,
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: `${systemPrompt}\n\nReturn valid JSON only. Do not include markdown fences, prose before JSON, prose after JSON, comments, or thousands separators inside numbers.` },
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.7,

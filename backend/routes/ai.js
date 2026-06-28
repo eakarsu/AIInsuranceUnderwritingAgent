@@ -59,10 +59,10 @@ router.post('/renewals-optimization', aiRateLimiter, async (req, res) => {
     const days = Math.min(Math.max(parseInt(lookahead_days) || 60, 7), 365);
 
     const upcoming = await pool.query(
-      `SELECT * FROM renewals WHERE renewal_date <= NOW() + ($1 || ' days')::interval ORDER BY renewal_date ASC LIMIT 100`,
+      `SELECT * FROM policy_renewals WHERE renewal_date <= NOW() + ($1 || ' days')::interval ORDER BY renewal_date ASC LIMIT 100`,
       [String(days)]
     ).catch(() => ({ rows: [] }));
-    const lossRatio = await pool.query('SELECT * FROM loss_ratio ORDER BY id DESC LIMIT 20').catch(() => ({ rows: [] }));
+    const lossRatio = await pool.query('SELECT * FROM loss_ratios ORDER BY id DESC LIMIT 20').catch(() => ({ rows: [] }));
     const policies = await pool.query('SELECT id, customer_name, policy_type, premium, status FROM policies ORDER BY id DESC LIMIT 60').catch(() => ({ rows: [] }));
 
     const ai = await callOpenRouter(
@@ -85,7 +85,7 @@ router.post('/rule-engine-optimization', aiRateLimiter, async (req, res) => {
 
     const rules = await pool.query('SELECT * FROM underwriting_rules ORDER BY id DESC LIMIT 100').catch(() => ({ rows: [] }));
     const recent = await pool.query('SELECT * FROM risk_assessments ORDER BY id DESC LIMIT 60').catch(() => ({ rows: [] }));
-    const lossRatio = await pool.query('SELECT * FROM loss_ratio ORDER BY id DESC LIMIT 20').catch(() => ({ rows: [] }));
+    const lossRatio = await pool.query('SELECT * FROM loss_ratios ORDER BY id DESC LIMIT 20').catch(() => ({ rows: [] }));
 
     const ai = await callOpenRouter(
       'You are an underwriting rule-engine optimization AI. Recommend additions, removals, and modifications to the rule set. Return JSON: { summary: string, additions: [{ rule_text: string, why: string, expected_impact: string }], removals: [{ rule_id: number, why: string }], modifications: [{ rule_id: number, change: string, expected_impact: string }], conflict_warnings: [{ rule_ids: [number], conflict: string }], coverage_gaps: [string], disclaimer: "AI guidance, run shadow tests before activation." }',
@@ -113,7 +113,7 @@ router.post('/premium-dynamism', aiRateLimiter, async (req, res) => {
       policy = p.rows[0];
     }
     const portfolio = await pool.query('SELECT policy_type, AVG(premium)::float AS avg_premium, COUNT(*)::int AS n FROM policies GROUP BY policy_type').catch(() => ({ rows: [] }));
-    const lossRatio = await pool.query('SELECT * FROM loss_ratio ORDER BY id DESC LIMIT 12').catch(() => ({ rows: [] }));
+    const lossRatio = await pool.query('SELECT * FROM loss_ratios ORDER BY id DESC LIMIT 12').catch(() => ({ rows: [] }));
 
     const ai = await callOpenRouter(
       'You are a real-time premium-dynamism AI. Recommend short-term premium adjustments. Return JSON: { summary: string, recommended_adjustment_pct: number, confidence_pct: number, drivers: [string], counter_signals: [string], cooldown_days: number, monitoring_checks: [string], disclaimer: "AI guidance, requires regulatory + actuarial sign-off." }',

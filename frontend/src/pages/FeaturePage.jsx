@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { apiGet, apiPost, apiPut, apiDelete } from '../api'
-import ReactMarkdown from 'react-markdown'
 import AppShell from '../components/AppShell'
+import ProfessionalAIReport from '../components/ProfessionalAIReport'
 
 const featureConfig = {
   'policies': {
@@ -331,6 +331,137 @@ const featureConfig = {
       return val
     }
   },
+  'quote-bind-issue': {
+    title: 'Quote Bind Issue', icon: 'QBI', api: '/quote-bind-issue',
+    aiAction: null,
+    columns: ['quote_number', 'customer_name', 'product_type', 'quoted_premium', 'stage', 'bind_deadline'],
+    columnLabels: { quote_number: 'Quote #', customer_name: 'Customer', product_type: 'Product', quoted_premium: 'Premium', stage: 'Stage', bind_deadline: 'Bind By' },
+    fields: [
+      { key: 'quote_number', label: 'Quote Number', type: 'text', required: true },
+      { key: 'customer_name', label: 'Customer Name', type: 'text', required: true },
+      { key: 'product_type', label: 'Product Type', type: 'select', options: ['auto', 'home', 'commercial', 'cyber', 'fleet', 'life', 'health'] },
+      { key: 'coverage_amount', label: 'Coverage Amount', type: 'number' },
+      { key: 'quoted_premium', label: 'Quoted Premium', type: 'number' },
+      { key: 'stage', label: 'Stage', type: 'select', options: ['quote', 'referred', 'approved', 'bound', 'issued', 'declined'] },
+      { key: 'assigned_underwriter', label: 'Assigned Underwriter', type: 'text' },
+      { key: 'effective_date', label: 'Effective Date', type: 'date' },
+      { key: 'bind_deadline', label: 'Bind Deadline', type: 'date' },
+      { key: 'notes', label: 'Notes', type: 'textarea', fullWidth: true },
+    ],
+    formatValue: (key, val) => ['coverage_amount', 'quoted_premium'].includes(key) && val ? `$${parseFloat(val).toLocaleString()}` : val
+  },
+  'billing-payments': {
+    title: 'Billing & Payments', icon: 'PAY', api: '/billing-payments',
+    aiAction: null,
+    columns: ['invoice_number', 'policy_number', 'customer_name', 'amount_due', 'amount_paid', 'payment_status'],
+    columnLabels: { invoice_number: 'Invoice #', policy_number: 'Policy #', customer_name: 'Customer', amount_due: 'Due', amount_paid: 'Paid', payment_status: 'Status' },
+    fields: [
+      { key: 'invoice_number', label: 'Invoice Number', type: 'text', required: true },
+      { key: 'policy_number', label: 'Policy Number', type: 'text' },
+      { key: 'customer_name', label: 'Customer Name', type: 'text', required: true },
+      { key: 'amount_due', label: 'Amount Due', type: 'number' },
+      { key: 'amount_paid', label: 'Amount Paid', type: 'number' },
+      { key: 'due_date', label: 'Due Date', type: 'date' },
+      { key: 'payment_status', label: 'Payment Status', type: 'select', options: ['paid', 'partial', 'due', 'overdue', 'waived'] },
+      { key: 'payment_method', label: 'Payment Method', type: 'select', options: ['ach', 'card', 'check', 'wire', 'cash', 'none'] },
+      { key: 'transaction_ref', label: 'Transaction Ref', type: 'text' },
+      { key: 'notes', label: 'Notes', type: 'textarea', fullWidth: true },
+    ],
+    formatValue: (key, val) => ['amount_due', 'amount_paid'].includes(key) && val ? `$${parseFloat(val).toLocaleString()}` : val
+  },
+  'endorsements': {
+    title: 'Endorsements', icon: 'END', api: '/endorsements',
+    aiAction: null,
+    columns: ['endorsement_number', 'policy_number', 'endorsement_type', 'premium_delta', 'effective_date', 'status'],
+    columnLabels: { endorsement_number: 'Endorsement #', policy_number: 'Policy #', endorsement_type: 'Type', premium_delta: 'Premium Delta', effective_date: 'Effective', status: 'Status' },
+    fields: [
+      { key: 'endorsement_number', label: 'Endorsement Number', type: 'text', required: true },
+      { key: 'policy_number', label: 'Policy Number', type: 'text', required: true },
+      { key: 'customer_name', label: 'Customer Name', type: 'text' },
+      { key: 'endorsement_type', label: 'Endorsement Type', type: 'select', options: ['vehicle_add', 'additional_insured', 'limit_change', 'address_change', 'deductible_change', 'coverage_add'] },
+      { key: 'effective_date', label: 'Effective Date', type: 'date' },
+      { key: 'premium_delta', label: 'Premium Delta', type: 'number' },
+      { key: 'status', label: 'Status', type: 'select', options: ['draft', 'quoted', 'approved', 'issued', 'declined'] },
+      { key: 'requested_by', label: 'Requested By', type: 'select', options: ['agent', 'customer', 'underwriter', 'system'] },
+      { key: 'description', label: 'Description', type: 'textarea', fullWidth: true },
+    ],
+    formatValue: (key, val) => key === 'premium_delta' && val ? `$${parseFloat(val).toLocaleString()}` : val
+  },
+  'cancellations': {
+    title: 'Cancellations', icon: 'CAN', api: '/cancellations',
+    aiAction: null,
+    columns: ['cancellation_number', 'policy_number', 'customer_name', 'reason', 'refund_amount', 'status'],
+    columnLabels: { cancellation_number: 'Cancellation #', policy_number: 'Policy #', customer_name: 'Customer', reason: 'Reason', refund_amount: 'Refund', status: 'Status' },
+    fields: [
+      { key: 'cancellation_number', label: 'Cancellation Number', type: 'text', required: true },
+      { key: 'policy_number', label: 'Policy Number', type: 'text', required: true },
+      { key: 'customer_name', label: 'Customer Name', type: 'text' },
+      { key: 'reason', label: 'Reason', type: 'select', options: ['nonpayment', 'customer_request', 'replacement_coverage', 'underwriting', 'sold_property'] },
+      { key: 'requested_date', label: 'Requested Date', type: 'date' },
+      { key: 'effective_date', label: 'Effective Date', type: 'date' },
+      { key: 'refund_amount', label: 'Refund Amount', type: 'number' },
+      { key: 'status', label: 'Status', type: 'select', options: ['pending', 'retention_review', 'approved', 'processed', 'rescinded'] },
+      { key: 'retention_action', label: 'Retention Action', type: 'select', options: ['payment_plan', 'coverage_review', 'agent_outreach', 'discount_review', 'none'] },
+      { key: 'notes', label: 'Notes', type: 'textarea', fullWidth: true },
+    ],
+    formatValue: (key, val) => key === 'refund_amount' && val ? `$${parseFloat(val).toLocaleString()}` : val
+  },
+  'esignature-packets': {
+    title: 'E-Signature Packets', icon: 'SIG', api: '/esignature-packets',
+    aiAction: null,
+    columns: ['packet_number', 'policy_number', 'document_type', 'recipient_email', 'sent_date', 'status'],
+    columnLabels: { packet_number: 'Packet #', policy_number: 'Policy #', document_type: 'Document', recipient_email: 'Recipient', sent_date: 'Sent', status: 'Status' },
+    fields: [
+      { key: 'packet_number', label: 'Packet Number', type: 'text', required: true },
+      { key: 'policy_number', label: 'Policy Number', type: 'text' },
+      { key: 'customer_name', label: 'Customer Name', type: 'text' },
+      { key: 'document_type', label: 'Document Type', type: 'select', options: ['application', 'binder', 'endorsement', 'cancellation', 'policy_packet'] },
+      { key: 'recipient_email', label: 'Recipient Email', type: 'email' },
+      { key: 'sent_date', label: 'Sent Date', type: 'date' },
+      { key: 'signed_date', label: 'Signed Date', type: 'date' },
+      { key: 'status', label: 'Status', type: 'select', options: ['draft', 'sent', 'viewed', 'signed', 'expired'] },
+      { key: 'provider_ref', label: 'Provider Ref', type: 'text' },
+      { key: 'notes', label: 'Notes', type: 'textarea', fullWidth: true },
+    ],
+    formatValue: (_key, val) => val
+  },
+  'rbac-admin': {
+    title: 'RBAC Admin', icon: 'RBAC', api: '/rbac-admin',
+    aiAction: null,
+    columns: ['user_email', 'role_name', 'permission_scope', 'mfa_status', 'last_review_date', 'access_status'],
+    columnLabels: { user_email: 'User', role_name: 'Role', permission_scope: 'Scope', mfa_status: 'MFA', last_review_date: 'Reviewed', access_status: 'Status' },
+    fields: [
+      { key: 'user_email', label: 'User Email', type: 'email', required: true },
+      { key: 'user_name', label: 'User Name', type: 'text' },
+      { key: 'role_name', label: 'Role Name', type: 'select', options: ['admin', 'underwriter', 'claims', 'agent_manager', 'compliance', 'viewer'] },
+      { key: 'permission_scope', label: 'Permission Scope', type: 'select', options: ['all_modules', 'underwriting', 'claims_only', 'producer_ops', 'audit_compliance', 'read_only'] },
+      { key: 'mfa_status', label: 'MFA Status', type: 'select', options: ['enabled', 'pending', 'exception_review', 'disabled'] },
+      { key: 'last_review_date', label: 'Last Review Date', type: 'date' },
+      { key: 'access_status', label: 'Access Status', type: 'select', options: ['active', 'review_due', 'suspended', 'pending', 'terminated'] },
+      { key: 'approver', label: 'Approver', type: 'text' },
+      { key: 'notes', label: 'Notes', type: 'textarea', fullWidth: true },
+    ],
+    formatValue: (_key, val) => val
+  },
+  'audit-exports': {
+    title: 'Audit Exports', icon: 'EXP', api: '/audit-exports',
+    aiAction: null,
+    columns: ['export_number', 'export_type', 'date_range', 'record_count', 'file_format', 'status'],
+    columnLabels: { export_number: 'Export #', export_type: 'Type', date_range: 'Range', record_count: 'Records', file_format: 'Format', status: 'Status' },
+    fields: [
+      { key: 'export_number', label: 'Export Number', type: 'text', required: true },
+      { key: 'export_type', label: 'Export Type', type: 'select', options: ['decision_rationale', 'rate_change', 'model_output', 'access_review', 'claim_activity'] },
+      { key: 'date_range', label: 'Date Range', type: 'select', options: ['last_7_days', 'last_30_days', 'quarter_to_date', 'year_to_date', 'custom'] },
+      { key: 'requested_by', label: 'Requested By', type: 'text' },
+      { key: 'record_count', label: 'Record Count', type: 'number' },
+      { key: 'file_format', label: 'File Format', type: 'select', options: ['csv', 'xlsx', 'pdf', 'json'] },
+      { key: 'status', label: 'Status', type: 'select', options: ['queued', 'generated', 'delivered', 'failed_review', 'archived'] },
+      { key: 'generated_at', label: 'Generated At', type: 'date' },
+      { key: 'delivery_target', label: 'Delivery Target', type: 'select', options: ['secure_download', 'sftp', 'email_notice', 'audit_room'] },
+      { key: 'notes', label: 'Notes', type: 'textarea', fullWidth: true },
+    ],
+    formatValue: (key, val) => key === 'record_count' && val ? Number(val).toLocaleString() : val
+  },
 }
 
 const AI_FORM_PRESETS = {
@@ -556,6 +687,34 @@ const AI_FORM_PRESETS = {
       status: 'approved',
     },
   ],
+  'quote-bind-issue': [
+    { label: 'Commercial bind', quote_number: 'QBI-AI-1001', customer_name: 'Northline Components', product_type: 'commercial', coverage_amount: '3000000', quoted_premium: '24800', stage: 'approved', assigned_underwriter: 'Jane Underwriter', effective_date: '2026-08-01', bind_deadline: '2026-07-20', notes: 'Subject to signed application, loss runs, and cyber control attestation.' },
+    { label: 'Auto issue', quote_number: 'QBI-AI-1002', customer_name: 'Maya Chen', product_type: 'auto', coverage_amount: '100000', quoted_premium: '1480', stage: 'bound', assigned_underwriter: 'Personal Lines Desk', effective_date: '2026-07-15', bind_deadline: '2026-07-10', notes: 'Ready for policy issuance after payment confirmation.' },
+  ],
+  'billing-payments': [
+    { label: 'Partial payment', invoice_number: 'INV-AI-3001', policy_number: 'POL-AUTO-1042', customer_name: 'Maya Chen', amount_due: '1480', amount_paid: '740', due_date: '2026-07-31', payment_status: 'partial', payment_method: 'ach', transaction_ref: 'ACH-884210', notes: 'Second installment due before bind deadline.' },
+    { label: 'Overdue commercial', invoice_number: 'INV-AI-3002', policy_number: 'POL-COM-2201', customer_name: 'Northline Components', amount_due: '24800', amount_paid: '0', due_date: '2026-07-05', payment_status: 'overdue', payment_method: 'none', transaction_ref: 'COLL-884211', notes: 'Collections reminder and agent escalation required.' },
+  ],
+  'endorsements': [
+    { label: 'Add vehicle', endorsement_number: 'END-AI-5001', policy_number: 'POL-AUTO-1042', customer_name: 'Maya Chen', endorsement_type: 'vehicle_add', effective_date: '2026-08-01', premium_delta: '320', status: 'quoted', requested_by: 'agent', description: 'Add 2025 Subaru Outback with same liability limits and comprehensive coverage.' },
+    { label: 'Additional insured', endorsement_number: 'END-AI-5002', policy_number: 'POL-COM-2201', customer_name: 'Northline Components', endorsement_type: 'additional_insured', effective_date: '2026-07-18', premium_delta: '0', status: 'approved', requested_by: 'customer', description: 'Add landlord as additional insured for leased manufacturing facility.' },
+  ],
+  'cancellations': [
+    { label: 'Nonpayment', cancellation_number: 'CAN-AI-6001', policy_number: 'POL-AUTO-1042', customer_name: 'Maya Chen', reason: 'nonpayment', requested_date: '2026-07-12', effective_date: '2026-08-01', refund_amount: '0', status: 'retention_review', retention_action: 'payment_plan', notes: 'Offer two-installment recovery plan before cancellation processing.' },
+    { label: 'Customer request', cancellation_number: 'CAN-AI-6002', policy_number: 'POL-HOME-2281', customer_name: 'Jordan Patel', reason: 'replacement_coverage', requested_date: '2026-07-10', effective_date: '2026-07-31', refund_amount: '410', status: 'pending', retention_action: 'agent_outreach', notes: 'Confirm replacement coverage and mortgagee notice before final cancellation.' },
+  ],
+  'esignature-packets': [
+    { label: 'Binder packet', packet_number: 'ESG-AI-7001', policy_number: 'POL-COM-2201', customer_name: 'Northline Components', document_type: 'binder', recipient_email: 'risk@northline.example', sent_date: '2026-07-12', signed_date: '', status: 'sent', provider_ref: 'DOCU-AI-7001', notes: 'Binder and terrorism disclosure awaiting authorized signature.' },
+    { label: 'Endorsement packet', packet_number: 'ESG-AI-7002', policy_number: 'POL-AUTO-1042', customer_name: 'Maya Chen', document_type: 'endorsement', recipient_email: 'maya.chen@example.com', sent_date: '2026-07-14', signed_date: '2026-07-15', status: 'signed', provider_ref: 'DOCU-AI-7002', notes: 'Signed vehicle-add endorsement returned and ready to issue.' },
+  ],
+  'rbac-admin': [
+    { label: 'UW access', user_email: 'uw.lead@insuranceai.com', user_name: 'UW Lead', role_name: 'underwriter', permission_scope: 'underwriting', mfa_status: 'enabled', last_review_date: '2026-06-30', access_status: 'active', approver: 'CISO', notes: 'Quarterly access review complete for underwriting queue and AI Center.' },
+    { label: 'Audit review', user_email: 'audit.viewer@insuranceai.com', user_name: 'Audit Viewer', role_name: 'viewer', permission_scope: 'audit_compliance', mfa_status: 'pending', last_review_date: '2026-06-15', access_status: 'review_due', approver: 'Compliance Officer', notes: 'Require MFA confirmation before next audit export cycle.' },
+  ],
+  'audit-exports': [
+    { label: 'Model output', export_number: 'AEX-AI-8001', export_type: 'model_output', date_range: 'quarter_to_date', requested_by: 'Compliance Lead', record_count: '420', file_format: 'xlsx', status: 'queued', generated_at: '2026-07-16', delivery_target: 'audit_room', notes: 'Package AI decisions, prompts, response IDs, and underwriter overrides.' },
+    { label: 'Rate change', export_number: 'AEX-AI-8002', export_type: 'rate_change', date_range: 'last_30_days', requested_by: 'Actuarial Director', record_count: '185', file_format: 'csv', status: 'generated', generated_at: '2026-07-15', delivery_target: 'secure_download', notes: 'Export premium changes and supporting rule references for review.' },
+  ],
 }
 
 export default function FeaturePage() {
@@ -571,6 +730,9 @@ export default function FeaturePage() {
   const [aiResult, setAiResult] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiRateLimited, setAiRateLimited] = useState(false)
+  const [fieldCalcLoading, setFieldCalcLoading] = useState(false)
+  const [fieldCalcError, setFieldCalcError] = useState('')
+  const [fieldCalcResult, setFieldCalcResult] = useState(null)
   const [loading, setLoading] = useState(true)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 })
 
@@ -580,6 +742,8 @@ export default function FeaturePage() {
     setAiResult(null)
     setShowForm(false)
     setAiRateLimited(false)
+    setFieldCalcError('')
+    setFieldCalcResult(null)
   }, [slug])
 
   async function loadItems(page = 1) {
@@ -606,6 +770,8 @@ export default function FeaturePage() {
     const initial = {}
     config.fields.forEach(f => { initial[f.key] = '' })
     setFormData(initial)
+    setFieldCalcError('')
+    setFieldCalcResult(null)
     setShowForm(true)
   }
 
@@ -613,6 +779,8 @@ export default function FeaturePage() {
     const next = {}
     config.fields.forEach(f => { next[f.key] = preset[f.key] ?? '' })
     setFormData(next)
+    setFieldCalcError('')
+    setFieldCalcResult(null)
   }
 
   function handleEdit() {
@@ -626,6 +794,8 @@ export default function FeaturePage() {
       data[f.key] = val
     })
     setFormData(data)
+    setFieldCalcError('')
+    setFieldCalcResult(null)
     setShowForm(true)
     setSelected(null)
   }
@@ -670,6 +840,30 @@ export default function FeaturePage() {
       setAiResult({ success: false, result: 'Failed to get AI analysis' })
     }
     setAiLoading(false)
+  }
+
+  async function handleFieldCalculation() {
+    setFieldCalcLoading(true)
+    setFieldCalcError('')
+    setFieldCalcResult(null)
+    try {
+      const res = await apiPost('/field-calculations', {
+        feature: config.title,
+        mode: editItem ? 'edit' : 'create',
+        fields: config.fields,
+        current_values: formData,
+        selected_record: editItem,
+      })
+      if (res?.error) {
+        setFieldCalcError(res.error)
+      } else {
+        setFormData({ ...formData, ...(res.values || {}) })
+        setFieldCalcResult(res)
+      }
+    } catch (err) {
+      setFieldCalcError(err.message || 'AI field calculation failed')
+    }
+    setFieldCalcLoading(false)
   }
 
   if (!config) return <div>Feature not found</div>
@@ -780,85 +974,12 @@ export default function FeaturePage() {
                   </div>
                   <div className="ai-result-body">
                     {aiResult.success ? (
-                      <>
-                        {/* Structured display if JSON available */}
-                        {aiResult.structured && (() => {
-                          const s = aiResult.structured
-                          const featureSlug = slug
-                          if (featureSlug === 'risk-assessment' && (s.risk_level || s.risk_factors || s.premium_impact !== undefined)) {
-                            return (
-                              <div>
-                                {s.risk_level && (
-                                  <div style={{ marginBottom: 10 }}>
-                                    <span style={{ fontWeight: 700 }}>Risk Level: </span>
-                                    <span style={{ padding: '2px 10px', borderRadius: 12, fontWeight: 700,
-                                      background: { low: '#c6f6d5', medium: '#fefcbf', high: '#fed7d7', critical: '#feb2b2' }[s.risk_level] || '#e2e8f0',
-                                      color: { low: '#276749', medium: '#744210', high: '#9b2c2c', critical: '#742a2a' }[s.risk_level] || '#4a5568' }}>
-                                      {s.risk_level?.toUpperCase()}
-                                    </span>
-                                  </div>
-                                )}
-                                {s.risk_factors && (
-                                  <div style={{ marginBottom: 10 }}>
-                                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Risk Factors:</div>
-                                    <ul style={{ margin: 0, paddingLeft: 18 }}>
-                                      {(Array.isArray(s.risk_factors) ? s.risk_factors : []).map((f, i) => (
-                                        <li key={i} style={{ fontSize: 13, color: '#9b2c2c' }}>{typeof f === 'object' ? `${f.factor}: ${f.impact}` : f}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {s.premium_impact !== undefined && (
-                                  <div style={{ fontWeight: 600 }}>Premium Impact: <span style={{ color: '#3182ce' }}>${Number(s.premium_impact).toLocaleString()}</span></div>
-                                )}
-                                <hr style={{ margin: '12px 0' }} />
-                                <ReactMarkdown>{aiResult.result}</ReactMarkdown>
-                              </div>
-                            )
-                          }
-                          if (featureSlug === 'fraud-detection' && (s.fraud_probability !== undefined || s.red_flags)) {
-                            return (
-                              <div>
-                                {s.fraud_probability !== undefined && (
-                                  <div style={{ marginBottom: 12 }}>
-                                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Fraud Probability: {s.fraud_probability}%</div>
-                                    <div style={{ background: '#e2e8f0', borderRadius: 4, height: 12, overflow: 'hidden' }}>
-                                      <div style={{ width: `${s.fraud_probability}%`, background: s.fraud_probability >= 70 ? '#e53e3e' : s.fraud_probability >= 40 ? '#d69e2e' : '#38a169', height: '100%', transition: 'width 0.3s' }} />
-                                    </div>
-                                  </div>
-                                )}
-                                {s.red_flags && s.red_flags.length > 0 && (
-                                  <div style={{ marginBottom: 10, padding: '10px 12px', background: '#fff5f5', border: '1px solid #feb2b2', borderRadius: 6 }}>
-                                    <div style={{ fontWeight: 600, marginBottom: 4, color: '#c53030' }}>Red Flags:</div>
-                                    <ul style={{ margin: 0, paddingLeft: 18 }}>
-                                      {s.red_flags.map((f, i) => <li key={i} style={{ fontSize: 13, color: '#c53030' }}>{f}</li>)}
-                                    </ul>
-                                  </div>
-                                )}
-                                {s.investigation_steps && s.investigation_steps.length > 0 && (
-                                  <div style={{ marginBottom: 10 }}>
-                                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Investigation Steps:</div>
-                                    <ol style={{ margin: 0, paddingLeft: 18 }}>
-                                      {s.investigation_steps.map((step, i) => (
-                                        <li key={i} style={{ fontSize: 13 }}>
-                                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 6, cursor: 'pointer' }}>
-                                            <input type="checkbox" style={{ marginTop: 2 }} />
-                                            {step}
-                                          </label>
-                                        </li>
-                                      ))}
-                                    </ol>
-                                  </div>
-                                )}
-                                <hr style={{ margin: '12px 0' }} />
-                                <ReactMarkdown>{aiResult.result}</ReactMarkdown>
-                              </div>
-                            )
-                          }
-                          return <ReactMarkdown>{aiResult.result}</ReactMarkdown>
-                        })()}
-                        {!aiResult.structured && <ReactMarkdown>{aiResult.result}</ReactMarkdown>}
-                      </>
+                      <ProfessionalAIReport
+                        title={`${config.title} AI Report`}
+                        eyebrow={config.aiAction?.label || 'AI Analysis'}
+                        data={aiResult}
+                        context={[{ label: 'Record', value: selected.id }]}
+                      />
                     ) : (
                       <p style={{ color: '#e53e3e' }}>{aiResult.result || 'Analysis failed'}</p>
                     )}
@@ -907,6 +1028,32 @@ export default function FeaturePage() {
                         {preset.label}
                       </button>
                     ))}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16, padding: 12, background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+                  <button type="button" className="btn btn-ai btn-sm" onClick={handleFieldCalculation} disabled={fieldCalcLoading}>
+                    {fieldCalcLoading ? 'Calculating Fields...' : 'AI Calculate Fields'}
+                  </button>
+                  <span style={{ fontSize: 12, color: '#718096' }}>
+                    Uses OpenRouter to populate or recalculate every field from the current form context.
+                  </span>
+                </div>
+                {fieldCalcError && (
+                  <div style={{ marginBottom: 16, padding: '10px 12px', background: '#fff5f5', border: '1px solid #feb2b2', borderRadius: 8, color: '#c53030', fontSize: 13 }}>
+                    {fieldCalcError}
+                    {/OPENROUTER_API_KEY|OpenRouter|API key/i.test(fieldCalcError) && (
+                      <div style={{ marginTop: 6, color: '#9b2c2c' }}>Configure <code>OPENROUTER_API_KEY</code> and restart the backend.</div>
+                    )}
+                  </div>
+                )}
+                {fieldCalcResult && (
+                  <div style={{ marginBottom: 16, padding: '10px 12px', background: '#f0fff4', border: '1px solid #9ae6b4', borderRadius: 8, color: '#276749', fontSize: 13 }}>
+                    {fieldCalcResult.summary || 'AI calculated fields and applied them to the form.'}
+                    {fieldCalcResult.warnings?.length > 0 && (
+                      <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+                        {fieldCalcResult.warnings.map((warning, index) => <li key={index}>{warning}</li>)}
+                      </ul>
+                    )}
                   </div>
                 )}
                 <div className="form-grid">

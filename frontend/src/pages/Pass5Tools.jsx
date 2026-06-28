@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiPost } from '../api'
+import ProfessionalAIReport from '../components/ProfessionalAIReport'
 
 /* Apply pass 5: 4-tab page covering customer portal, agent portal,
    underwriting workflow, and integration status. */
@@ -41,7 +42,7 @@ function CustomerPortal() {
       </div>
       <button onClick={quote} style={{ marginTop: 8 }}>Get Quote</button>
       {error && <div style={{ color: 'crimson' }}>{error}</div>}
-      {result && <pre style={{ background: '#f6f6f6', padding: 8 }}>{JSON.stringify(result, null, 2)}</pre>}
+      {result && <ProfessionalAIReport title="Quote Result" eyebrow="Customer Portal" data={result} />}
     </div>
   )
 }
@@ -62,7 +63,7 @@ function AgentPortal() {
       <input value={agentId} onChange={e => setAgentId(e.target.value)} placeholder="Agent ID" />
       <button onClick={load}>Load</button>
       {error && <div style={{ color: 'crimson' }}>{error}</div>}
-      {book && <pre style={{ background: '#f6f6f6', padding: 8 }}>{JSON.stringify(book.totals, null, 2)}</pre>}
+      {book && <ProfessionalAIReport title="Book Summary" eyebrow="Agent Portal" data={book.totals} />}
       {book && <ul>{(book.policies || []).map(p => <li key={p.id}>{p.policy_number} — {p.status}</li>)}</ul>}
     </div>
   )
