@@ -9,11 +9,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const handleAutoFill = () => {
-    setEmail('admin@insuranceai.com')
-    setPassword('admin123')
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -41,10 +36,6 @@ export default function Login() {
           <h1>InsurAI Platform</h1>
           <p>AI-Powered Insurance Underwriting Agent</p>
         </div>
-
-        <button className="btn-auto-fill" onClick={handleAutoFill}>
-          &#x26A1; Quick Login — Auto-fill Credentials
-        </button>
 
         {error && <div className="error-message">{error}</div>}
 

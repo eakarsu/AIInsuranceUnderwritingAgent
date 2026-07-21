@@ -3,6 +3,8 @@ const pool = require('./db');
 const bcrypt = require('bcryptjs');
 
 async function seed() {
+  if (process.env.ALLOW_DESTRUCTIVE_DEMO_SEED !== 'true' || process.env.NODE_ENV === 'production') throw new Error('destructive demo seed is disabled');
+  if (!process.env.DEMO_ADMIN_PASSWORD || !process.env.DEMO_UNDERWRITER_PASSWORD) throw new Error('explicit demo passwords are required for demo seeding');
   try {
     console.log('Starting database seed...\n');
 
@@ -20,8 +22,8 @@ async function seed() {
       )
     `);
 
-    const adminHash = await bcrypt.hash('admin123', 10);
-    const underwriterHash = await bcrypt.hash('under123', 10);
+    const adminHash = await bcrypt.hash(process.env.DEMO_ADMIN_PASSWORD, 10);
+    const underwriterHash = await bcrypt.hash(process.env.DEMO_UNDERWRITER_PASSWORD, 10);
 
     await pool.query(`
       INSERT INTO users (name, email, password_hash, role) VALUES

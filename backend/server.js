@@ -77,6 +77,7 @@ app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/agentic-underwriting', require('./routes/agenticUnderwriting'));
 app.use('/api/renewal-optimizer', require('./routes/renewalOptimizer'));
 app.use('/api/appetite-drift-monitor', require('./routes/appetiteDriftMonitor'));
+app.use('/api/governed-underwriting', require('./middleware/auth'), require('./routes/governedUnderwriting'));
 app.use('/api/quote-bind-issue', createOpsRouter('quote_bind_issue'));
 app.use('/api/billing-payments', createOpsRouter('billing_payments'));
 app.use('/api/endorsements', createOpsRouter('endorsements'));
