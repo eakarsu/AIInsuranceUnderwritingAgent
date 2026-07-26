@@ -8,6 +8,10 @@ async function main() {
     password_hash VARCHAR(255) NOT NULL, role VARCHAR(50) NOT NULL, tenant_id VARCHAR(100),
     authority_limit NUMERIC, created_at TIMESTAMP DEFAULT NOW()
   )`);
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id TEXT');
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) NOT NULL DEFAULT 'underwriter'");
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS authority_limit NUMERIC');
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT');
   const email=(process.env.ADMIN_EMAIL||'runtime-admin@example.com').trim().toLowerCase();
   const hash=await bcrypt.hash(process.env.ADMIN_PASSWORD||'RuntimeAcceptance123!',12);
   await pool.query(`INSERT INTO users (name,email,password_hash,role,tenant_id,authority_limit) VALUES ($1,$2,$3,'admin',$4,1000000) ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name,password_hash=EXCLUDED.password_hash,role=EXCLUDED.role,tenant_id=EXCLUDED.tenant_id,authority_limit=EXCLUDED.authority_limit`,['Runtime Administrator',email,hash,process.env.GOVERNANCE_TENANT_ID||'runtime-tenant']);
