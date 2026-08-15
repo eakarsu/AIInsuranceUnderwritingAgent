@@ -102,6 +102,7 @@ app.use('/api/gap-no-e-signature-for-binderspolicies', route_gap_no_e_signature_
 
 // Custom Views (mount BEFORE any 404)
 app.use('/api/custom-views', require('./routes/customViews'));
+app.use('/api', require('./routes/generatedFeatures').router);
 
 // 404 fallback for unknown /api routes
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
