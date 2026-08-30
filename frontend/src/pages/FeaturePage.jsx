@@ -724,6 +724,7 @@ export default function FeaturePage() {
 
   const [items, setItems] = useState([])
   const [selected, setSelected] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState(null)
   const [formData, setFormData] = useState({})
@@ -800,9 +801,14 @@ export default function FeaturePage() {
     setSelected(null)
   }
 
-  async function handleDelete() {
-    if (!window.confirm('Are you sure you want to delete this item?')) return
-    await apiDelete(`${config.api}/${selected.id}`)
+  function handleDelete() {
+    setDeleteTarget(selected)
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    await apiDelete(`${config.api}/${deleteTarget.id}`)
+    setDeleteTarget(null)
     setSelected(null)
     loadItems()
   }
@@ -1000,7 +1006,20 @@ export default function FeaturePage() {
                   &#x2728; {config.aiAction.label}
                 </button>
               )}
-              <button className="btn btn-secondary btn-sm" onClick={() => setSelected(null)} style={{ marginLeft: 'auto' }}>Close</button>
+              <button className="btn btn-secondary btn-sm" onClick={() => setSelected(null)} style={{ marginLeft: 'auto' }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="modal-overlay" onClick={() => setDeleteTarget(null)}>
+          <div className="modal" role="alertdialog" aria-modal="true" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+            <div className="modal-header"><h2>Delete record?</h2></div>
+            <div className="modal-body">This permanently removes this record and its stored data.</div>
+            <div className="modal-actions">
+              <button className="btn btn-secondary btn-sm" onClick={() => setDeleteTarget(null)}>Cancel</button>
+              <button className="btn btn-danger btn-sm" onClick={confirmDelete}>Delete</button>
             </div>
           </div>
         </div>
