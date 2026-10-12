@@ -1,3 +1,4 @@
+import NativeAIControls from "../components/NativeAIControls.jsx";
 import { useEffect, useState } from 'react'
 import { apiGet, apiPost } from '../api'
 import AppShell from '../components/AppShell'
@@ -51,7 +52,7 @@ export default function RenewalOptimizer() {
   ] : []
 
   return (
-    <AppShell title="Renewal Optimizer" subtitle="Predict renewal probability and recommend retention actions.">
+    <NativeAIControls busy={loading} context="InsuranceUnderwritingAgent"><AppShell title="Renewal Optimizer" subtitle="Predict renewal probability and recommend retention actions.">
       <div className="dashboard">
         <div className="page-header">
           <div>
@@ -59,7 +60,10 @@ export default function RenewalOptimizer() {
             <span className="item-count">{upcoming.length} upcoming policy renewals</span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <input placeholder="Policy ID optional" value={policyId} onChange={(e) => setPolicyId(e.target.value)} />
+            <select data-ai-field={"policyId"} aria-label="Policy" value={policyId} onChange={(e) => setPolicyId(e.target.value)}>
+              <option value="">All upcoming policies</option>
+              {upcoming.map((policy) => <option key={policy.id} value={policy.id}>{policy.policy_number} · {policy.customer_name}</option>)}
+            </select>
             <button className="btn btn-ai" onClick={() => run()} disabled={loading}>{loading ? 'Optimizing...' : 'Optimize'}</button>
           </div>
         </div>
@@ -168,6 +172,6 @@ export default function RenewalOptimizer() {
           </div>
         </div>
       )}
-    </AppShell>
+    </AppShell></NativeAIControls>
   )
 }

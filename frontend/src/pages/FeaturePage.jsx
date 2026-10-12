@@ -874,6 +874,8 @@ export default function FeaturePage() {
 
   if (!config) return <div>Feature not found</div>
   const formPresets = AI_FORM_PRESETS[slug] || []
+  const savedAIResult = config.aiAction && selected ? selected[config.aiAction.resultKey] : null
+  const displayedAIResult = aiResult || savedAIResult
 
   return (
     <AppShell title={config.title} subtitle={`${pagination.total || items.length} items from PostgreSQL`}>
@@ -971,28 +973,23 @@ export default function FeaturePage() {
                 </div>
               )}
 
-              {aiResult && (
+              {displayedAIResult && (
                 <div className="ai-result-container">
                   <div className="ai-result-header">
                     <span>&#x2728;</span>
-                    <h3>AI Analysis Result</h3>
-                    <span className="ai-model">{aiResult.model || 'AI Model'}</span>
+                    <h3>{aiResult ? 'AI Analysis Result' : 'Saved AI Analysis'}</h3>
+                    <span className="ai-model">{displayedAIResult.model || 'AI Model'}</span>
                   </div>
                   <div className="ai-result-body">
-                    {aiResult.success ? (
+                    {displayedAIResult.success !== false ? (
                       <ProfessionalAIReport
                         title={`${config.title} AI Report`}
-                        eyebrow={config.aiAction?.label || 'AI Analysis'}
-                        data={aiResult}
+                        eyebrow={aiResult ? (config.aiAction?.label || 'AI Analysis') : 'Saved AI Analysis'}
+                        data={displayedAIResult}
                         context={[{ label: 'Record', value: selected.id }]}
                       />
                     ) : (
-                      <p style={{ color: '#e53e3e' }}>{aiResult.result || 'Analysis failed'}</p>
-                    )}
-                    {aiResult.usage && aiResult.usage.total_tokens && (
-                      <div style={{ marginTop: 16, padding: '8px 12px', background: '#e9d5ff', borderRadius: 6, fontSize: 12, color: '#553c9a' }}>
-                        Tokens used: {aiResult.usage.total_tokens} | Request ID: {aiResult.id || 'N/A'}
-                      </div>
+                      <p style={{ color: '#e53e3e' }}>{displayedAIResult.result || 'Analysis failed'}</p>
                     )}
                   </div>
                 </div>

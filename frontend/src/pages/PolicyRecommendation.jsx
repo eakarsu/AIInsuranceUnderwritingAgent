@@ -38,6 +38,11 @@ export default function PolicyRecommendation() {
     },
   ]
 
+  const availablePresets = presets.map((preset, index) => ({
+    ...preset,
+    customerId: customers.length ? String(customers[index % customers.length].id) : '',
+  }))
+
   useEffect(() => {
     apiGet('/customers').then((d) => setCustomers(Array.isArray(d) ? d : (d?.data || []))).catch(() => setCustomers([]))
   }, [])
@@ -96,10 +101,11 @@ export default function PolicyRecommendation() {
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24, marginBottom: 24 }}>
           <form onSubmit={submit}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-              {presets.map((preset) => (
+              {availablePresets.map((preset) => (
                 <button
                   key={preset.label}
                   type="button"
+                  disabled={!preset.customerId || loading}
                   onClick={() => applyPreset(preset)}
                   style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #bee3f8', background: '#ebf8ff', color: '#2b6cb0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                 >

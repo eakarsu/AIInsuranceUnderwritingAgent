@@ -14,9 +14,11 @@ function renderValue(value) {
 }
 
 export default function AgenticUnderwriting() {
-  const [applicationId, setApplicationId] = useState('1')
+  const [applicationId, setApplicationId] = useState('')
+  const [policies, setPolicies] = useState([])
   const [result, setResult] = useState(null)
   const [recent, setRecent] = useState([])
+  const [selectedRecent, setSelectedRecent] = useState(null)
   const [loading, setLoading] = useState(false)
 
   async function loadRecent() {
@@ -24,7 +26,14 @@ export default function AgenticUnderwriting() {
     setRecent(Array.isArray(data) ? data : [])
   }
 
-  useEffect(() => { loadRecent() }, [])
+  async function loadPolicies() {
+    const data = await apiGet('/policies?limit=20')
+    const rows = Array.isArray(data) ? data : (data?.data || [])
+    setPolicies(rows)
+    if (!applicationId && rows[0]?.id) setApplicationId(String(rows[0].id))
+  }
+
+  useEffect(() => { loadRecent(); loadPolicies() }, [])
 
   async function run(e) {
     e.preventDefault()
@@ -51,10 +60,13 @@ export default function AgenticUnderwriting() {
           <form onSubmit={run} style={{ display: 'flex', gap: 12, alignItems: 'end', flexWrap: 'wrap' }}>
             <div className="form-group" style={{ minWidth: 220 }}>
               <label>Application / Policy ID</label>
-              <input value={applicationId} onChange={(e) => setApplicationId(e.target.value)} />
+              <select value={applicationId} onChange={(e) => setApplicationId(e.target.value)} required>
+                <option value="">Select an existing policy</option>
+                {policies.map((policy) => <option key={policy.id} value={policy.id}>{policy.policy_number || `Policy ${policy.id}`}</option>)}
+              </select>
             </div>
-            <button className="btn btn-ai" type="submit" disabled={loading}>{loading ? 'Analyzing...' : 'Run Triage'}</button>
-            {['1', '4', '9', '15'].map((id) => <button key={id} type="button" className="btn btn-secondary btn-sm" onClick={() => setApplicationId(id)}>Policy {id}</button>)}
+            <button className="btn btn-ai" type="submit" disabled={loading || !applicationId}>{loading ? 'Analyzing...' : 'Run Triage'}</button>
+            {policies.slice(0, 3).map((policy) => <button key={policy.id} type="button" className="btn btn-secondary btn-sm" onClick={() => setApplicationId(String(policy.id))}>Use {policy.policy_number || `policy ${policy.id}`}</button>)}
           </form>
         </section>
 
@@ -70,14 +82,34 @@ export default function AgenticUnderwriting() {
         <section className="table-container" style={{ marginTop: 18 }}>
           <div style={{ padding: 18, borderBottom: '1px solid var(--border)' }}><h2 style={{ fontSize: 18 }}>Recent Decisions</h2></div>
           <table className="data-table">
-            <thead><tr><th>Application</th><th>Created</th><th>Payload</th></tr></thead>
+            <thead><tr><th>Application</th><th>Created</th><th>Summary</th><th>Report</th></tr></thead>
             <tbody>
-              {recent.map((item) => <tr key={item.id}><td>{item.application_id}</td><td>{item.created_at?.slice(0, 19)}</td><td>{renderValue(item.payload)}</td></tr>)}
-              {recent.length === 0 && <tr><td colSpan="3">No recent triage decisions.</td></tr>}
+              {recent.map((item) => <tr key={item.id}><td>{item.application_id}</td><td>{item.created_at?.slice(0, 19)}</td><td>{item.payload?.summary || item.payload?.rationale || renderValue(item.payload?.auto_decision || item.payload)}</td><td><button type="button" className="btn btn-secondary btn-sm" onClick={() => setSelectedRecent(item)}>View saved report</button></td></tr>)}
+              {recent.length === 0 && <tr><td colSpan="4">No recent triage decisions.</td></tr>}
             </tbody>
           </table>
         </section>
       </div>
+
+      {selectedRecent && (
+        <div className="modal-overlay" onClick={() => setSelectedRecent(null)}>
+          <div className="modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Saved Underwriting Triage</h2>
+              <button className="modal-close" onClick={() => setSelectedRecent(null)}>x</button>
+            </div>
+            <div className="modal-body">
+              <ProfessionalAIReport
+                title="Saved Underwriting Triage"
+                eyebrow="Saved AI Decision"
+                data={{ structured: selectedRecent.payload, model: selectedRecent.model, usage: selectedRecent.usage, id: selectedRecent.id }}
+                context={[{ label: 'Application', value: selectedRecent.application_id }, { label: 'Saved', value: selectedRecent.created_at?.slice(0, 19) || '-' }]}
+              />
+            </div>
+            <div className="modal-actions"><button className="btn btn-secondary btn-sm" onClick={() => setSelectedRecent(null)}>Close</button></div>
+          </div>
+        </div>
+      )}
     </AppShell>
   )
 }

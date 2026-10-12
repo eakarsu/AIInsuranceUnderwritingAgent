@@ -144,9 +144,9 @@ export default function ChatBot({ pageContext }) {
             {loading && <div className="chatbot-message assistant"><p>Checking app APIs...</p></div>}
           </div>
 
-          <div className="chatbot-suggestions">
+          <div className="chatbot-suggestions" aria-label="AI prompt presets">
             {suggestions.map((suggestion) => (
-              <button key={suggestion} type="button" onClick={() => send(suggestion)} disabled={loading}>{suggestion}</button>
+              <button key={suggestion} type="button" onClick={() => setInput(suggestion)} disabled={loading}>{suggestion}</button>
             ))}
           </div>
 

@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { apiPost } from '../api'
+import NativeAIControls from "../components/NativeAIControls.jsx";
+import { useEffect, useState } from 'react'
+import { apiGet, apiPost } from '../api'
 import AppShell from '../components/AppShell'
 import ReactMarkdown from 'react-markdown'
 
@@ -45,14 +46,15 @@ function PresetButtons({ presets, onApply }) {
   )
 }
 
-function RiskTrajectoryForm({ onSubmit, loading }) {
+function RiskTrajectoryForm({ onSubmit, loading, customers }) {
   const [customerId, setCustomerId] = useState('')
   const [horizon, setHorizon] = useState('24')
-  const presets = [
-    { label: 'Auto customer', customerId: '1', horizon: '12' },
-    { label: 'Commercial risk', customerId: '5', horizon: '24' },
-    { label: 'Fleet outlook', customerId: '12', horizon: '36' },
-  ]
+  const horizons = ['12', '24', '36']
+  const presets = customers.slice(0, 3).map((customer, index) => ({
+    label: customer.name || customer.full_name || `Customer ${customer.id}`,
+    customerId: String(customer.id),
+    horizon: horizons[index],
+  }))
   const applyPreset = (preset) => {
     setCustomerId(preset.customerId)
     setHorizon(preset.horizon)
@@ -62,12 +64,15 @@ function RiskTrajectoryForm({ onSubmit, loading }) {
     <form onSubmit={(e) => { e.preventDefault(); onSubmit({ customer_id: Number(customerId), horizon_months: Number(horizon) }) }}>
       <PresetButtons presets={presets} onApply={applyPreset} />
       <div style={{ marginBottom: 14 }}>
-        <FieldLabel>Customer ID</FieldLabel>
-        <input type="number" value={customerId} onChange={(e) => setCustomerId(e.target.value)} placeholder="e.g. 42" required style={inputStyle} />
+        <FieldLabel>Customer</FieldLabel>
+        <select data-ai-field={"customerId"} value={customerId} onChange={(e) => setCustomerId(e.target.value)} required style={inputStyle}>
+          <option value="">Select an existing customer</option>
+          {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name || customer.full_name || `Customer ${customer.id}`}</option>)}
+        </select>
       </div>
       <div style={{ marginBottom: 14 }}>
         <FieldLabel>Horizon (months)</FieldLabel>
-        <select value={horizon} onChange={(e) => setHorizon(e.target.value)} style={inputStyle}>
+        <select data-ai-field={"horizon"} value={horizon} onChange={(e) => setHorizon(e.target.value)} style={inputStyle}>
           <option value="12">12</option>
           <option value="24">24</option>
           <option value="36">36</option>
@@ -99,11 +104,11 @@ function RenewalsOptForm({ onSubmit, loading }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 14, marginBottom: 14 }}>
         <div>
           <FieldLabel>Lookahead (days)</FieldLabel>
-          <input type="number" value={days} onChange={(e) => setDays(e.target.value)} min={7} max={365} style={inputStyle} />
+          <input data-ai-field={"days"} type="number" value={days} onChange={(e) => setDays(e.target.value)} min={7} max={365} style={inputStyle} />
         </div>
         <div>
           <FieldLabel>Portfolio Target (optional)</FieldLabel>
-          <input value={target} onChange={(e) => setTarget(e.target.value)} placeholder="e.g. retain 90% premium, loss ratio < 65%" style={inputStyle} />
+          <input data-ai-field={"target"} value={target} onChange={(e) => setTarget(e.target.value)} placeholder="e.g. retain 90% premium, loss ratio < 65%" style={inputStyle} />
         </div>
       </div>
       <button type="submit" className="btn btn-ai" disabled={loading} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
@@ -129,7 +134,7 @@ function RuleEngineOptForm({ onSubmit, loading }) {
       <PresetButtons presets={presets} onApply={applyPreset} />
       <div style={{ marginBottom: 14 }}>
         <FieldLabel>Focus Area (optional)</FieldLabel>
-        <input value={focus} onChange={(e) => setFocus(e.target.value)} placeholder="e.g. auto, property, commercial, all" style={inputStyle} />
+        <input data-ai-field={"focus"} value={focus} onChange={(e) => setFocus(e.target.value)} placeholder="e.g. auto, property, commercial, all" style={inputStyle} />
       </div>
       <button type="submit" className="btn btn-ai" disabled={loading} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
         {loading ? 'Analyzing rules...' : 'Optimize Rule Engine'}
@@ -138,15 +143,22 @@ function RuleEngineOptForm({ onSubmit, loading }) {
   )
 }
 
-function PremiumDynamismForm({ onSubmit, loading }) {
+function PremiumDynamismForm({ onSubmit, loading, policies }) {
   const [policyId, setPolicyId] = useState('')
   const [window, setWindow] = useState('30')
   const [market, setMarket] = useState('')
-  const presets = [
-    { label: 'Auto price check', policyId: '1', window: '14', market: 'Competitors lowered preferred auto pricing by 3%, claim frequency is stable, retention is below target.' },
-    { label: 'CAT pressure', policyId: '8', window: '45', market: 'Recent severe weather increased property loss expectations, reinsurance cost is up, regulator filings require documented rationale.' },
-    { label: 'Commercial renewal', policyId: '15', window: '90', market: 'Commercial liability rates are firming, wage inflation is increasing exposure, account has two minor losses.' },
+  const windows = ['14', '45', '90']
+  const contexts = [
+    'Competitors lowered preferred auto pricing by 3%, claim frequency is stable, and retention is below target.',
+    'Recent severe weather increased property loss expectations; reinsurance cost is up and rate rationale needs review.',
+    'Liability rates are firming, wage inflation is increasing exposure, and the account has two minor losses.',
   ]
+  const presets = policies.slice(0, 3).map((policy, index) => ({
+    label: policy.policy_number || `Policy ${policy.id}`,
+    policyId: String(policy.id),
+    window: windows[index],
+    market: contexts[index],
+  }))
   const applyPreset = (preset) => {
     setPolicyId(preset.policyId)
     setWindow(preset.window)
@@ -158,17 +170,20 @@ function PremiumDynamismForm({ onSubmit, loading }) {
       <PresetButtons presets={presets} onApply={applyPreset} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
         <div>
-          <FieldLabel>Policy ID (optional)</FieldLabel>
-          <input type="number" value={policyId} onChange={(e) => setPolicyId(e.target.value)} placeholder="e.g. 17" style={inputStyle} />
+          <FieldLabel>Policy (optional)</FieldLabel>
+          <select data-ai-field={"policyId"} value={policyId} onChange={(e) => setPolicyId(e.target.value)} style={inputStyle}>
+            <option value="">Portfolio-wide review</option>
+            {policies.map((policy) => <option key={policy.id} value={policy.id}>{policy.policy_number || `Policy ${policy.id}`}</option>)}
+          </select>
         </div>
         <div>
           <FieldLabel>Time Window (days)</FieldLabel>
-          <input type="number" value={window} onChange={(e) => setWindow(e.target.value)} min={1} max={180} style={inputStyle} />
+          <input data-ai-field={"window"} type="number" value={window} onChange={(e) => setWindow(e.target.value)} min={1} max={180} style={inputStyle} />
         </div>
       </div>
       <div style={{ marginBottom: 14 }}>
         <FieldLabel>Market Context (optional)</FieldLabel>
-        <textarea rows={3} value={market} onChange={(e) => setMarket(e.target.value)} placeholder="Recent CAT events, competitor pricing, regulatory shifts, etc." style={{ ...inputStyle, fontFamily: 'inherit' }} />
+        <textarea data-ai-field={"market"} rows={3} value={market} onChange={(e) => setMarket(e.target.value)} placeholder="Recent CAT events, competitor pricing, regulatory shifts, etc." style={{ ...inputStyle, fontFamily: 'inherit' }} />
       </div>
       <button type="submit" className="btn btn-ai" disabled={loading} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
         {loading ? 'Calculating...' : 'Recommend Adjustment'}
@@ -445,6 +460,17 @@ export default function AICenter() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [customers, setCustomers] = useState([])
+  const [policies, setPolicies] = useState([])
+
+  useEffect(() => {
+    Promise.all([apiGet('/customers?limit=20'), apiGet('/policies?limit=20')])
+      .then(([customerData, policyData]) => {
+        setCustomers(Array.isArray(customerData) ? customerData : (customerData?.data || []))
+        setPolicies(Array.isArray(policyData) ? policyData : (policyData?.data || []))
+      })
+      .catch(() => { setCustomers([]); setPolicies([]) })
+  }, [])
 
   const submit = async (body) => {
     setError(''); setResult(null); setLoading(true)
@@ -469,7 +495,7 @@ export default function AICenter() {
   const activeTab = TABS.find((t) => t.key === tab)
 
   return (
-    <AppShell title="AI Center" subtitle="Structured underwriting intelligence for trajectory, renewals, rules, and pricing.">
+    <NativeAIControls busy={loading} context="InsuranceUnderwritingAgent"><AppShell title="AI Center" subtitle="Structured underwriting intelligence for trajectory, renewals, rules, and pricing.">
       <div className="dashboard">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
           {TABS.map((t) => (
@@ -495,10 +521,10 @@ export default function AICenter() {
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24 }}>
           <div style={{ marginBottom: 14, fontSize: 13, color: '#4a5568' }}>{activeTab?.desc}</div>
 
-          {tab === 'risk-trajectory' && <RiskTrajectoryForm onSubmit={submit} loading={loading} />}
+          {tab === 'risk-trajectory' && <RiskTrajectoryForm onSubmit={submit} loading={loading} customers={customers} />}
           {tab === 'renewals-optimization' && <RenewalsOptForm onSubmit={submit} loading={loading} />}
           {tab === 'rule-engine-optimization' && <RuleEngineOptForm onSubmit={submit} loading={loading} />}
-          {tab === 'premium-dynamism' && <PremiumDynamismForm onSubmit={submit} loading={loading} />}
+          {tab === 'premium-dynamism' && <PremiumDynamismForm onSubmit={submit} loading={loading} policies={policies} />}
 
           {error && (
             <div style={{ marginTop: 16, padding: '10px 14px', background: '#fff5f5', border: '1px solid #feb2b2', borderRadius: 8, color: '#c53030', fontSize: 13 }}>
@@ -520,6 +546,6 @@ export default function AICenter() {
           )}
         </div>
       </div>
-    </AppShell>
+    </AppShell></NativeAIControls>
   )
 }

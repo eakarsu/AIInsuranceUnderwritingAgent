@@ -8,6 +8,9 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const demoEmail = import.meta.env.VITE_DEMO_EMAIL || ''
+  const demoPassword = import.meta.env.VITE_DEMO_PASSWORD || ''
+  const demoEnabled = import.meta.env.VITE_ENABLE_DEMO_CREDENTIAL_AUTOFILL !== 'false' && Boolean(demoEmail && demoPassword)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -62,12 +65,16 @@ export default function Login() {
           </div>
           <button
             type="button"
-            onClick={() => { setEmail(import.meta.env.VITE_DEMO_EMAIL || ''); setPassword(import.meta.env.VITE_DEMO_PASSWORD || ''); }}
-            disabled={!import.meta.env.VITE_DEMO_EMAIL || !import.meta.env.VITE_DEMO_PASSWORD}
-            aria-label="Auto Fill Demo Credentials"
+            onClick={() => {
+              setEmail(demoEmail)
+              setPassword(demoPassword)
+              setError('')
+            }}
+            disabled={loading || !demoEnabled}
+            aria-label="Fill Demo Credentials"
             style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
           >
-            Auto Fill Demo Credentials
+            Fill Demo Credentials
           </button>
           <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
