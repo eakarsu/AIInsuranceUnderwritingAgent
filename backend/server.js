@@ -101,6 +101,7 @@ app.use('/api/gap-no-file-upload-for-supporting-documents', route_gap_no_file_up
 app.use('/api/gap-no-e-signature-for-binderspolicies', route_gap_no_e_signature_for_binderspolicies);
 
 // Custom Views (mount BEFORE any 404)
+app.use('/api/feature-pack', (() => { try { return require('./routes/featurePack').defaultRouter; } catch { return (_req,res)=>res.status(503).json({error:'feature-pack unavailable'}); } })());
 app.use('/api/custom-views', require('./routes/customViews'));
 app.use('/api', require('./routes/generatedFeatures').router);
 
